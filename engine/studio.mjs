@@ -164,10 +164,11 @@ function staticStudio(req, res, path) {
  * with --dev, or when there is no build (a checkout that has not run
  * `npm run build:studio`).
  */
-async function devStudio(log) {
+/** Vite in middleware mode, its live reload riding on the Studio's own port, so two Studios never fight over one. */
+async function devStudio(log, httpServer) {
   try {
     const { createServer } = await import('vite');
-    const vite = await createServer({ configFile: join(STUDIO, 'vite.config.mjs'), server: { middlewareMode: true }, appType: 'spa' });
+    const vite = await createServer({ configFile: join(STUDIO, 'vite.config.mjs'), server: { middlewareMode: true, hmr: { server: httpServer } }, appType: 'spa' });
     log('  the Studio is served live from studio/src (dev)');
     return vite;
   } catch (error) {
@@ -176,7 +177,7 @@ async function devStudio(log) {
 }
 
 export async function startStudio(project, { port = 4800, log = console.log, dev = false } = {}) {
-  const vite = dev || !existsSync(join(STUDIO, 'dist', 'index.html')) ? await devStudio(log) : null;
+  let vite = null;
   const renders = new Map();
 
   async function clipInfo(name) {
@@ -263,6 +264,7 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
     }
   });
 
+  if (dev || !existsSync(join(STUDIO, 'dist', 'index.html'))) vite = await devStudio(log, server);
   server.on('close', () => vite?.close());
   return new Promise((resolve, reject) => {
     server.once('error', (error) => {
