@@ -103,30 +103,22 @@ export function ArrowIcon() {
   );
 }
 
+/** Dolly's mark: a lowercase d whose bowl is a viewfinder (site/scripts/icons.mjs draws the favicon). */
 export function Mark() {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="var(--button)" />
-      <g fill="var(--button-ink)">
-        <rect x="9" y="8.5" width="11" height="8" rx="2" />
-        <path d="M20 11.2 24 9v7l-4-2.2z" />
-        <rect x="7" y="18.5" width="18" height="2.6" rx="1.3" />
-        <circle cx="11" cy="23.4" r="1.9" />
-        <circle cx="21" cy="23.4" r="1.9" />
-      </g>
+      <rect width="32" height="32" rx="8" fill="var(--mark-tile)" />
+      <path fill="var(--mark-d)" fillRule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z" />
     </svg>
   );
 }
 
-/** The dolly: a camera on a cart, riding the track. */
+/** The dolly on its track: a small carriage straddling the rails, its centre the playhead. */
 export function Cart() {
   return (
     <svg viewBox="0 0 22 20" aria-hidden="true">
-      <rect x="5" y="1" width="9" height="6.5" rx="1.6" fill="currentColor" />
-      <path d="M14 3.4 17.5 1.6v5.6L14 5.4z" fill="currentColor" />
-      <rect x="2" y="9" width="18" height="2.4" rx="1.2" fill="currentColor" />
-      <circle cx="6" cy="14.5" r="2.2" fill="var(--paper)" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="16" cy="14.5" r="2.2" fill="var(--paper)" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="3" y="4" width="16" height="12" rx="4" fill="currentColor" />
+      <rect x="10.25" y="7" width="1.5" height="6" rx="0.75" fill="var(--paper)" />
     </svg>
   );
 }

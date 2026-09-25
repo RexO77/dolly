@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dolly mark options</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 16px 80px; background: #f5f5f2; color: #1a191d; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1040px; margin: 0 auto; display: grid; gap: 48px; }
+  h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+  header p { margin: 8px 0 0; color: #5d5a58; max-width: 60ch; }
+  section { display: grid; gap: 14px; }
+  h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.02em; display: flex; gap: 10px; align-items: baseline; }
+  h2 code { font: 12.5px ui-monospace, Menlo, monospace; color: #77736f; font-weight: 400; }
+  h2 b { font: 600 11px ui-monospace, Menlo, monospace; background: #f3e6d2; padding: 3px 8px; border-radius: 6px; }
+  section > p { margin: -6px 0 0; color: #5d5a58; }
+  .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .col { display: grid; gap: 0; border-radius: 10px; overflow: hidden; }
+  .bar { display: flex; align-items: flex-end; gap: 2px; height: 42px; padding: 0 10px; }
+  .bar.light { background: #dfe1e5; }
+  .bar.dark { background: #1f2023; }
+  .tab { display: flex; align-items: center; gap: 8px; height: 34px; width: 220px; padding: 0 12px; border-radius: 9px 9px 0 0; font-size: 12px; white-space: nowrap; overflow: hidden; }
+  .light .tab { background: #fff; color: #202124; }
+  .dark .tab { background: #35363a; color: #e8eaed; }
+  .tab.dim { background: transparent; width: 160px; opacity: 0.7; }
+  .tab span { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+  .tab i { font-style: normal; opacity: 0.6; }
+  .fav { flex: none !important; width: 16px; height: 16px; border-radius: 50%; background: currentColor; opacity: 0.35; }
+  .sizes { display: flex; align-items: flex-end; gap: 24px; padding: 20px; min-height: 240px; }
+  .sizes.light { background: #ffffff; }
+  .sizes.dark { background: #28292c; color: #e8eaed; }
+  figure { margin: 0; display: grid; justify-items: center; gap: 8px; }
+  figcaption { font: 11px ui-monospace, Menlo, monospace; opacity: 0.6; }
+  .m { display: block; flex: none; }
+  .light .m-crop .t{fill:#1a191d}.light .m-crop .a{fill:#f5f5f2}.light .m-crop .w{fill:#1a191d}.dark .m-crop .t{fill:#f5f5f2}.dark .m-crop .a{fill:#1a191d}.dark .m-crop .w{fill:#f3e6d2}
+.light .m-wash .t{fill:#f3e6d2}.light .m-wash .a{fill:#1a191d}.dark .m-wash .t{fill:#f3e6d2}.dark .m-wash .a{fill:#1a191d}
+.light .m-lean .t{fill:#1a191d}.light .m-lean .a{fill:#f3e6d2}.dark .m-lean .t{fill:#f5f5f2}.dark .m-lean .a{fill:#1a191d}
+.light .m-d .t{fill:#1a191d}.light .m-d .a{fill:#f3e6d2}.dark .m-d .t{fill:#f5f5f2}.dark .m-d .a{fill:#1a191d}
+  @media (max-width: 760px) { .pair { grid-template-columns: minmax(0, 1fr); } .sizes { gap: 14px; overflow-x: auto; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Dolly: four marks</h1>
+    <p>Each is two or three flat shapes on a 32 grid, in ink, paper and the wash. The files follow the browser: a light tab gets the light palette, a dark tab the dark one. The one marked current is <code>icon.svg</code>; change <code>CHOSEN</code> in <code>site/scripts/icons.mjs</code> and run <code>npm run icons:site</code> to switch.</p>
+  </header>
+  <section>
+    <h2>Frame within a frame <code>icons/crop.svg</code></h2>
+    <p>the screen, and the camera’s crop leaning in on its lower right.</p>
+    <div class="pair">
+      <div class="col">
+      <div class="bar light">
+        <div class="tab"><svg class="m m-crop" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes light"><figure><svg class="m m-crop" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-crop" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-crop" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-crop" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+      <div class="col">
+      <div class="bar dark">
+        <div class="tab"><svg class="m m-crop" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes dark"><figure><svg class="m m-crop" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-crop" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-crop" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-crop" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h2>The wash <code>icons/wash.svg</code></h2>
+    <p>a crisp window cut out of the warm field the spotlight lays down.</p>
+    <div class="pair">
+      <div class="col">
+      <div class="bar light">
+        <div class="tab"><svg class="m m-wash" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes light"><figure><svg class="m m-wash" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-wash" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-wash" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-wash" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+      <div class="col">
+      <div class="bar dark">
+        <div class="tab"><svg class="m m-wash" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes dark"><figure><svg class="m m-wash" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-wash" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-wash" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-wash" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h2>The lean <code>icons/lean.svg</code></h2>
+    <p>the camera’s zoom over a clip as one shape: quick up on the spring, hold, back down.</p>
+    <div class="pair">
+      <div class="col">
+      <div class="bar light">
+        <div class="tab"><svg class="m m-lean" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes light"><figure><svg class="m m-lean" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-lean" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-lean" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-lean" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+      <div class="col">
+      <div class="bar dark">
+        <div class="tab"><svg class="m m-lean" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes dark"><figure><svg class="m m-lean" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-lean" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-lean" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-lean" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h2>A viewfinder d <code>icons/d.svg</code> <b>current</b></h2>
+    <p>a lowercase d whose bowl is a viewfinder: a screen-shaped window, not a circle.</p>
+    <div class="pair">
+      <div class="col">
+      <div class="bar light">
+        <div class="tab"><svg class="m m-d" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes light"><figure><svg class="m m-d" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-d" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-d" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-d" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+      <div class="col">
+      <div class="bar dark">
+        <div class="tab"><svg class="m m-d" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><span>Dolly: film your product</span><i>×</i></div>
+        <div class="tab dim"><span class="fav"></span><span>Another tab</span></div>
+      </div>
+      <div class="sizes dark"><figure><svg class="m m-d" width="16" height="16" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>16</figcaption></figure><figure><svg class="m m-d" width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>32</figcaption></figure><figure><svg class="m m-d" width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>64</figcaption></figure><figure><svg class="m m-d" width="180" height="180" viewBox="0 0 32 32" aria-hidden="true"><rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/></svg><figcaption>180</figcaption></figure></div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>

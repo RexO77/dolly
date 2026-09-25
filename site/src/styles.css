@@ -28,6 +28,8 @@
   --button-hover: oklch(0.29 0.006 60);
   --frame-line: oklch(0.2 0.01 60 / 0.12);
   --lit: var(--wash-deep);
+  --mark-tile: oklch(0.2 0.006 290);
+  --mark-d: var(--wash);
   --lit-move: var(--wash);
 
   --sans: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
@@ -64,6 +66,8 @@
     --button-hover: oklch(0.86 0.005 95);
     --frame-line: oklch(1 0 0 / 0.08);
     --lit: oklch(0.93 0.03 78 / 0.42);
+    --mark-tile: oklch(0.966 0.004 95);
+    --mark-d: oklch(0.2 0.006 290);
     --lit-move: oklch(0.93 0.03 78 / 0.18);
     color-scheme: dark;
   }
@@ -90,6 +94,8 @@
   --button-hover: oklch(0.86 0.005 95);
   --frame-line: oklch(1 0 0 / 0.08);
   --lit: oklch(0.93 0.03 78 / 0.42);
+  --mark-tile: oklch(0.966 0.004 95);
+  --mark-d: oklch(0.2 0.006 290);
   --lit-move: oklch(0.93 0.03 78 / 0.18);
   color-scheme: dark;
 }

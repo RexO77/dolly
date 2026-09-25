@@ -56,7 +56,8 @@
     "dev:studio": "node bin/dolly.mjs storyboard --dev",
     "build:site": "vite build --config site/vite.config.mjs",
     "dev:site": "vite --config site/vite.config.mjs --port 4850",
-    "media:site": "node site/scripts/media.mjs"
+    "media:site": "node site/scripts/media.mjs",
+    "icons:site": "node site/scripts/icons.mjs"
   },
   "dependencies": {
     "playwright-core": "^1.63.0"
