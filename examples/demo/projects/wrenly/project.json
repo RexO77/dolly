@@ -1,0 +1,7 @@
+{
+  "name": "wrenly",
+  "base": "http://localhost:5190",
+  "start": { "cwd": ".", "cmd": "node app/serve.mjs" },
+  "viewport": { "width": 1440, "height": 900, "dpr": 2 },
+  "preset": "web-1920"
+}

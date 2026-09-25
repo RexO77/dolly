@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autumn launch · Wrenly</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <button class="workspace" type="button">
+        <img class="workspace-mark" src="icon.svg" alt="" width="22" height="22">
+        <span class="workspace-name">Halden Studio</span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 6.5 8 9.5l3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <label class="search">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input type="text" placeholder="Search" aria-label="Search">
+        <kbd>⌘K</kbd>
+      </label>
+
+      <nav class="nav" aria-label="Main">
+        <a class="nav-item" href="#inbox">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 9.5h3l1 1.5h3l1-1.5h3M3.5 3.5h9l1 6v3h-11v-3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          Inbox <span class="count">3</span>
+        </a>
+        <a class="nav-item" href="#mine">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="8" cy="8" r="2" fill="currentColor"/></svg>
+          My issues
+        </a>
+        <a class="nav-item" href="#activity">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8.5h2.5l1.5-4 3 8 1.5-4H14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Activity
+        </a>
+      </nav>
+
+      <div class="nav-group">
+        <p class="nav-heading">Projects</p>
+        <a class="nav-item is-active" href="#autumn"><span class="dot" style="--dot: var(--amber)"></span>Autumn launch</a>
+        <a class="nav-item" href="#field"><span class="dot" style="--dot: var(--teal)"></span>Field app</a>
+        <a class="nav-item" href="#help"><span class="dot" style="--dot: var(--violet)"></span>Help centre</a>
+        <a class="nav-item" href="#brand"><span class="dot" style="--dot: var(--rose)"></span>Brand refresh</a>
+      </div>
+
+      <div class="nav-group">
+        <p class="nav-heading">Views</p>
+        <a class="nav-item" href="#due">Due this week</a>
+        <a class="nav-item" href="#blocked">Blocked</a>
+      </div>
+
+      <div class="me">
+        <span class="avatar" style="--hue: 32">MO</span>
+        <span class="me-name">Maya Okafor</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <p class="crumbs"><span>Projects</span><span class="sep">/</span><span class="here">Autumn launch</span></p>
+        <div class="topbar-actions">
+          <div class="stack" aria-label="6 members">
+            <span class="avatar" style="--hue: 32">MO</span>
+            <span class="avatar" style="--hue: 205">TL</span>
+            <span class="avatar" style="--hue: 150">PR</span>
+            <span class="avatar" style="--hue: 280">JW</span>
+            <span class="avatar more">+2</span>
+          </div>
+          <button class="btn ghost" type="button">Share</button>
+          <button class="btn primary" type="button">
+            <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            New issue
+          </button>
+        </div>
+      </header>
+
+      <section class="project">
+        <div class="project-title">
+          <h1>Autumn launch</h1>
+          <p class="project-sub">New onboarding, pricing and the welcome emails, live on October 14.</p>
+        </div>
+        <div class="progress" aria-live="polite">
+          <div class="progress-row">
+            <span class="progress-label">Progress</span>
+            <span class="progress-value"><b id="done-count">2</b> of 12 done</span>
+          </div>
+          <div class="bar"><span id="bar-fill"></span></div>
+        </div>
+      </section>
+
+      <div class="filters" role="tablist" aria-label="Filter issues">
+        <button class="chip" role="tab" data-filter="all" aria-selected="true">All issues <span class="n" data-count="all"></span></button>
+        <button class="chip" role="tab" data-filter="progress" aria-selected="false">In progress <span class="n" data-count="progress"></span></button>
+        <button class="chip" role="tab" data-filter="review" aria-selected="false">In review <span class="n" data-count="review"></span></button>
+        <button class="chip" role="tab" data-filter="todo" aria-selected="false">Todo <span class="n" data-count="todo"></span></button>
+        <button class="chip" role="tab" data-filter="done" aria-selected="false">Done <span class="n" data-count="done"></span></button>
+        <span class="filters-spacer"></span>
+        <span class="display">Grouped by status · Sorted by priority</span>
+      </div>
+
+      <div class="list" id="list"></div>
+    </main>
+
+    <aside class="panel" id="panel" aria-hidden="true" inert>
+      <header class="panel-top">
+        <p class="panel-crumbs"><span class="dot" style="--dot: var(--amber)"></span>Autumn launch <span class="sep">/</span> <span class="mono" id="p-id"></span></p>
+        <button class="icon-btn" type="button" id="panel-close" aria-label="Close issue">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7m0-7-7 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <div class="panel-body">
+        <h2 id="p-title"></h2>
+        <dl class="props" id="props">
+          <dt>Status</dt>
+          <dd class="status-cell">
+            <button class="status-btn" type="button" id="status-btn" aria-haspopup="menu" aria-expanded="false"></button>
+            <div class="menu" id="status-menu" role="menu" hidden></div>
+          </dd>
+          <dt>Assignee</dt><dd id="p-assignee"></dd>
+          <dt>Priority</dt><dd id="p-priority"></dd>
+          <dt>Due</dt><dd id="p-due"></dd>
+          <dt>Labels</dt><dd id="p-labels"></dd>
+        </dl>
+        <p class="desc" id="p-desc"></p>
+        <div class="checklist" id="p-checks"></div>
+        <div class="activity">
+          <p class="activity-heading">Activity</p>
+          <ol id="p-activity"></ol>
+        </div>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+      <span class="toast-icon"></span>
+      <span class="toast-text" id="toast-text"></span>
+      <button class="toast-undo" type="button">Undo</button>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

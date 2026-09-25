@@ -1,0 +1,4 @@
+# Takes, renders and scratch: Dolly makes these again from projects/.
+masters/
+out/
+.dolly/
