@@ -62,7 +62,7 @@ export function SpanBar({ length, t0, t1, beats = [], snaps = [], onStart, onEnd
     <div className="span">
       <svg ref={svg} className={cx('span-bar', drag.current && 'dragging')} width={width} height={h} viewBox={`0 0 ${width} ${h}`} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
         <line className="span-track" x1={x(0)} x2={x(length)} y1={h / 2} y2={h / 2} />
-        {beats.map((b) => <circle key={b.label} className="span-beat" cx={x(b.t)} cy={h / 2} r={2}><title>{b.label}</title></circle>)}
+        {beats.map((b) => <circle key={b.label} className={cx('span-beat', snapped?.t === b.t && 'hit')} cx={x(b.t)} cy={h / 2} r={snapped?.t === b.t ? 3 : 2}><title>{b.label.replace(/[-_]+/g, ' ')}</title></circle>)}
         <rect className={cx('span-range', movable && 'movable')} x={x(t0)} y={6} width={Math.max(2, x(t1) - x(t0))} height={h - 12} rx={4} onPointerDown={movable ? start('shift') : undefined} />
         <g className="span-handle" onPointerDown={start('start')} role="slider" aria-label="Shot start" aria-valuenow={t0} tabIndex={-1}>
           <rect className="span-hit" x={x(t0) - 8} y={0} width={16} height={h} />
@@ -74,7 +74,7 @@ export function SpanBar({ length, t0, t1, beats = [], snaps = [], onStart, onEnd
         </g>
         {snapped && <line className="span-snap" x1={x(snapped.t)} x2={x(snapped.t)} y1={0} y2={h} />}
       </svg>
-      <span className={cx('span-note', snapped && 'on')} aria-live="polite">{snapped ? `Snapped: ${snapped.label}` : ''}</span>
+      <span className={cx('span-note', snapped && 'on')} aria-live="polite">{snapped ? `Snapped to ${snapped.label.replace(/[-_]+/g, ' ')}` : ''}</span>
     </div>
   );
 }

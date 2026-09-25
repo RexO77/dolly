@@ -3,12 +3,12 @@
  * the edge between two shots to retime them (edges snap to the take's beats
  * and to a lean's settle point before each; Shift drags freely), drag in the
  * ruler to scrub. Beneath, what the product is doing: where it changes, and
- * where a move runs through a change.
+ * where a move runs through a change. A drag that lands on a beat lights
+ * the beat up, so the snap is felt as well as seen.
  */
 import { useLayoutEffect, useRef, useState } from 'react';
-import { useClipVersion, useTime, cx, fmt } from '../hooks.js';
-import { CHANGING } from '../model/clip.js';
-import { titleOf } from './ShotList.jsx';
+import { useVersion, useTime, cx, fmt } from '../hooks.js';
+import { CHANGING, beatWords, shotTitle } from '../model/clip.js';
 
 const H = 96;
 const RULER = 18;
@@ -26,7 +26,7 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
   const [W, setW] = useState(800);
   const [hover, setHover] = useState(null);
   const [snapped, setSnapped] = useState(null);
-  useClipVersion(clip);
+  useVersion(clip);
   const t = useTime(transport);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setW(e.contentRect.width));
@@ -130,14 +130,15 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
             <g key={s.id} className={cx('strip-cell', `strip-${s.kind}`, s.id === selectedId && 'on')}>
               <rect x={x(s.t0) + 1} y={CELL_Y} width={w} height={CELL_H} rx={5} data-role="cell" data-n={n} />
               {w > 18 && <text className="strip-cell-n" x={x(s.t0) + 8} y={CELL_Y + 15}>{n + 1}</text>}
-              {w > 56 && <text className="strip-cell-what" x={x(s.t0) + 8} y={CELL_Y + 29}>{fit(titleOf(s), w - 16)}</text>}
+              {w > 56 && <text className="strip-cell-what" x={x(s.t0) + 8} y={CELL_Y + 29}>{fit(shotTitle(s), w - 16)}</text>}
             </g>
           );
         })}
         {clip.beats.map((b) => (
-          <g key={b.label} className="strip-beat">
+          <g key={b.label} className={cx('strip-beat', snapped?.t === b.t && 'hit')}>
             <line x1={x(b.t)} x2={x(b.t)} y1={CELL_Y - 4} y2={CELL_Y + CELL_H + 4} />
-            <title>{`${b.label} at ${fmt(b.t)}s`}</title>
+            <circle className="strip-beat-dot" cx={x(b.t)} cy={CELL_Y - 5} r={2.5} />
+            <title>{`${beatWords(b.label)} at ${fmt(b.t)}s`}</title>
           </g>
         ))}
         {/* Edges between shots: the keyframes, dragged to retime. The first and last stay put. */}
@@ -159,7 +160,12 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
         <line className="strip-head" x1={x(t)} x2={x(t)} y1={0} y2={H} />
         <rect className="strip-head-cap" x={x(t) - 4} y={0} width={8} height={5} rx={1.5} />
       </svg>
-      <span className={cx('strip-snap-note', snapped && 'on')} aria-live="polite">{snapped ? `Snapped: ${snapped.label}` : ''}</span>
+      <div className="strip-lanes">
+        <span><i />Activity: where the product changes</span>
+        {clip.beats.length > 0 && <span className="lane-beat"><i />Beat: a moment the take marked</span>}
+        {clashes.length > 0 && <span className="lane-clash"><i />A move during a change</span>}
+        <span className={cx('lane-snap', snapped && 'on')} aria-live="polite">{snapped ? `Snapped to ${beatWords(snapped.label)}` : ''}</span>
+      </div>
     </div>
   );
 }

@@ -1,16 +1,33 @@
 /**
  * The picture: one clock over the master (with slow motion), and drawing a
  * frame of it through the camera, either as delivered or as the whole screen
- * with the camera's frame on it.
+ * with the camera's frame on it. Across a cut's fade two moments of the
+ * master are on screen, so a second video follows the far side of the cut
+ * and the two are blended as the render blends them.
  */
 import { viewBox, spotAlpha } from '../../../engine/camera/math.mjs';
 import { WASH, WASH_ALPHA, SPOT_RADIUS } from '../../../engine/camera/grammar.mjs';
+
+const masterUrl = (clip) => `/media/master/${encodeURIComponent(clip.name)}.mp4`;
+
+function openVideo(src) {
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  video.src = src;
+  return video;
+}
 
 export class Transport {
   constructor(clip, video) {
     this.clip = clip;
     this.video = video;
+    /** The far side of a cut, seeked only while a fade is on screen. */
+    this.fade = clip.spec.source?.cut ? openVideo(masterUrl(clip)) : null;
     this.t = 0;
+    /** Counts every frame a seek has landed on, so a picture knows to redraw even when the clock has not moved. */
+    this.frame = 0;
     this.playing = false;
     this.rate = 1;
     this.loop = true;
@@ -22,7 +39,7 @@ export class Transport {
     video.muted = true;
     video.playsInline = true;
     video.preload = 'auto';
-    video.src = `/media/master/${encodeURIComponent(clip.name)}.mp4`;
+    video.src = masterUrl(clip);
     this.ready = new Promise((resolve) => video.addEventListener('loadeddata', resolve, { once: true }));
     this.onSeeked = () => {
       this.seeking = false;
@@ -33,9 +50,22 @@ export class Transport {
         video.currentTime = m;
         return;
       }
+      this.frame += 1;
       this.emit();
     };
     video.addEventListener('seeked', this.onSeeked);
+    this.onFadeSeeked = () => {
+      this.frame += 1;
+      this.emit();
+    };
+    this.fade?.addEventListener('seeked', this.onFadeSeeked);
+  }
+
+  /** Put the far side of a cut where clip time t needs it. */
+  follow(t, tolerance = 0) {
+    const to = this.clip.sourceAt(t).to;
+    if (!this.fade || to === null || Math.abs(this.fade.currentTime - to) <= tolerance) return;
+    this.fade.currentTime = to;
   }
 
   on(fn) {
@@ -49,7 +79,8 @@ export class Transport {
 
   seek(t) {
     this.t = Math.max(0, Math.min(this.clip.length, t));
-    const m = this.clip.masterTime(this.t);
+    const m = this.clip.sourceAt(this.t).from;
+    this.follow(this.t);
     this.emit();
     if (this.seeking) {
       this.pending = m;
@@ -75,7 +106,8 @@ export class Transport {
     const [start, end] = this.region ?? [0, this.clip.length];
     if (this.t >= end - 0.02 || this.t < start) this.seek(start);
     this.video.playbackRate = this.rate;
-    this.video.play();
+    /* The browser may refuse to play (a background tab saving power, a pause that lands first). The clock below still runs and keeps seeking the video along with it, so a refusal only costs smoothness. */
+    this.video.play().catch(() => {});
     this.playing = true;
     this.base = { wall: performance.now(), t: this.t };
     const tick = () => {
@@ -90,11 +122,12 @@ export class Transport {
         }
         t = start;
         this.base = { wall: performance.now(), t: start };
-        this.video.currentTime = this.clip.masterTime(start);
+        this.video.currentTime = this.clip.sourceAt(start).from;
       }
       this.t = t;
-      const want = this.clip.masterTime(t);
+      const want = this.clip.sourceAt(t).from;
       if (Math.abs(this.video.currentTime - want) > 0.12) this.video.currentTime = want;
+      this.follow(t, 1 / this.clip.info.master.fps);
       this.emit();
       this.raf = requestAnimationFrame(tick);
     };
@@ -132,6 +165,11 @@ export class Transport {
     this.video.removeEventListener('seeked', this.onSeeked);
     this.video.removeAttribute('src');
     this.video.load();
+    if (this.fade) {
+      this.fade.removeEventListener('seeked', this.onFadeSeeked);
+      this.fade.removeAttribute('src');
+      this.fade.load();
+    }
   }
 }
 
@@ -147,13 +185,28 @@ function wash(c, X, Y, RW, RH, radius, alpha, W, H) {
   c.restore();
 }
 
-/** The frame as delivered at t. */
-export function drawDelivered(c, video, clip, t, OW, OH) {
+/**
+ * The master at t, drawn with `draw(video)`: across a cut's fade the far
+ * side goes over the near one at the fade's mix, which is xfade's linear
+ * blend. The wash then goes over the blend, as it does in the render.
+ */
+function drawSource(c, clip, t, video, fade, draw) {
+  draw(video);
+  const { to, mix } = clip.sourceAt(t);
+  if (to === null || !fade || fade.readyState < 2 || mix <= 0) return;
+  c.save();
+  c.globalAlpha = mix;
+  draw(fade);
+  c.restore();
+}
+
+/** The frame as delivered at t. `fade` is the far side of a cut, if the clip has one. */
+export function drawDelivered(c, video, clip, t, OW, OH, fade = null) {
   const { master, css } = clip.info;
   const v = viewBox(master.width, master.height, OW, OH, clip.view(t));
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
-  c.drawImage(video, v.x0, v.y0, v.vw, v.vh, 0, 0, OW, OH);
+  drawSource(c, clip, t, video, fade, (src) => c.drawImage(src, v.x0, v.y0, v.vw, v.vh, 0, 0, OW, OH));
   const k = OW / v.vw;
   for (const s of clip.spec.spots) {
     wash(c, (s.x * master.width - v.x0) * k, (s.y * master.height - v.y0) * k, s.w * master.width * k, s.h * master.height * k, (s.radius ?? SPOT_RADIUS) * css * k, spotAlpha(s, t), OW, OH);
@@ -165,7 +218,7 @@ export function drawDelivered(c, video, clip, t, OW, OH) {
  * The whole screen at w x h, washed, and where the camera's crop falls on
  * it (in canvas pixels) so a frame can be drawn over it.
  */
-export function drawScreen(c, video, clip, t, w, h, view = clip.view(t)) {
+export function drawScreen(c, video, clip, t, w, h, view = clip.view(t), fade = null) {
   const { master, css, output } = clip.info;
   const k = Math.min(w / master.width, h / master.height);
   const ox = (w - master.width * k) / 2;
@@ -173,7 +226,7 @@ export function drawScreen(c, video, clip, t, w, h, view = clip.view(t)) {
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
   c.clearRect(0, 0, w, h);
-  c.drawImage(video, 0, 0, master.width, master.height, ox, oy, master.width * k, master.height * k);
+  drawSource(c, clip, t, video, fade, (src) => c.drawImage(src, 0, 0, master.width, master.height, ox, oy, master.width * k, master.height * k));
   for (const s of clip.spec.spots) {
     c.save();
     c.beginPath();
@@ -194,10 +247,7 @@ export function sharpness(clip, t) {
 
 /** Real frames of the delivered clip at `times`, `width` px wide, drawn one after another. */
 export async function thumbnails(clip, times, width, { signal } = {}) {
-  const video = document.createElement('video');
-  video.muted = true;
-  video.preload = 'auto';
-  video.src = `/media/master/${encodeURIComponent(clip.name)}.mp4`;
+  const video = openVideo(masterUrl(clip));
   await new Promise((resolve) => video.addEventListener('loadeddata', resolve, { once: true }));
   const { width: OW, height: OH } = clip.info.output;
   const full = document.createElement('canvas');

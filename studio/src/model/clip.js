@@ -5,10 +5,11 @@
  * the Studio shows is what renders.
  */
 import { cameraAt, resolve, normalizeSpec, checkSpec } from '../../../engine/camera/math.mjs';
-import { LEAN_Z, SPRING, SETTLE, SPRING_CURVE, SMOOTH_CURVE } from '../../../engine/camera/grammar.mjs';
+import { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE } from '../../../engine/camera/grammar.mjs';
 import { segments, directorsNotes, boxName } from '../../../engine/storyboard.mjs';
+import { clipLength } from './project.js';
 
-export { LEAN_Z, SPRING, SETTLE, SPRING_CURVE, SMOOTH_CURVE, resolve, boxName };
+export { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE, resolve, boxName };
 
 export const r3 = (n) => Math.round(n * 1000) / 1000;
 const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-4);
@@ -19,6 +20,21 @@ const clean = (spec) => ({ ...spec, camera: spec.camera.map(({ id: _id, ...k }) 
 
 /** How much activity counts as the product changing. */
 export const CHANGING = 0.35;
+
+/** A beat's label as words: `machine-learning` reads as "machine learning". */
+export const beatWords = (label) => label.replace(/[-_]+/g, ' ');
+
+/** A shot's title, in the words a shot list uses. */
+export function shotTitle(s) {
+  const on = s.target.kind === 'box' ? ` on ${s.target.name}` : '';
+  if (s.kind === 'hold') {
+    if (s.target.kind === 'wide') return s.t0 === 0 ? 'Open wide' : 'Hold wide';
+    return s.target.kind === 'box' ? `Hold on ${s.target.name}` : 'Hold close';
+  }
+  if (s.kind === 'lean') return `Lean in${on}`;
+  if (s.kind === 'pull') return 'Pull back to wide';
+  return `Hop${s.target.kind === 'box' ? ` to ${s.target.name}` : ' across'}`;
+}
 
 export class Clip {
   static async list() {
@@ -39,12 +55,34 @@ export class Clip {
     this.info = info;
     this.activity = activity;
     this.spec = { ...info.spec, camera: info.spec.camera.map(withId), spots: info.spec.spots ?? [] };
+    this.holdToEnd();
     this.saved = JSON.stringify(clean(this.spec));
     this.undoStack = [];
     this.redoStack = [];
     this.listeners = new Set();
     this.version = 0;
     this.liveBase = null;
+    /** How far a render has got, 0..1, while one runs; otherwise null. */
+    this.rendering = null;
+  }
+
+  /**
+   * The camera holds its last view to the end of the clip. Say so with a
+   * keyframe there, so the last hold is a shot that can be seen and timed
+   * (a clip with no camera yet is then one wide shot, not none). The
+   * picture is the same either way.
+   */
+  holdToEnd() {
+    const keys = this.spec.camera;
+    const last = keys[keys.length - 1];
+    const end = r3(this.length);
+    if (last.t >= end - 0.05) return;
+    const before = keys[keys.length - 2];
+    if (before && near(resolve(before), resolve(last))) last.t = end;
+    else {
+      const { id: _id, ease: _ease, transition: _transition, ...view } = last;
+      keys.push(withId({ ...view, t: end }));
+    }
   }
 
   /* ── Reading ── */
@@ -66,19 +104,36 @@ export class Clip {
   }
 
   get length() {
-    const { master } = this.info;
-    const { cut, end } = this.spec.source ?? {};
-    let d = master.duration;
-    if (cut) d -= cut.to - cut.from + (cut.fade ?? 0.25);
-    return Math.min(d, end ?? Infinity);
+    return clipLength(this.info.master.duration, this.spec.source);
   }
 
-  /** Clip time to master time, across a cut. */
-  masterTime(t) {
+  /** Whether the camera does anything yet: a clip that only holds wide has not been directed. */
+  get hasMoves() {
+    return this.shots.some((s) => s.kind !== 'hold');
+  }
+
+  /**
+   * What of the master is on screen at clip time t. Across a cut, the render
+   * crossfades (ffmpeg's xfade, engine/render.mjs): over the `fade` seconds
+   * before `cut.from`, the master at `from` fades out as the master at `to`
+   * fades in, by `mix` (0..1, linear). Everywhere else there is one moment
+   * and `to` is null.
+   */
+  sourceAt(t) {
     const cut = this.spec.source?.cut;
-    if (!cut) return t;
-    const f = cut.fade ?? 0.25;
-    return t < cut.from - f / 2 ? t : cut.to + (t - (cut.from - f));
+    if (!cut) return { from: t, to: null, mix: 0 };
+    const fade = cut.fade ?? 0.25;
+    const start = cut.from - fade;
+    const after = cut.to + (t - start);
+    if (t < start) return { from: t, to: null, mix: 0 };
+    if (t >= cut.from || fade <= 0) return { from: after, to: null, mix: 0 };
+    return { from: t, to: after, mix: (t - start) / fade };
+  }
+
+  /** The master moment most on screen at clip time t: what the activity is read at. */
+  masterTime(t) {
+    const s = this.sourceAt(t);
+    return s.to !== null && s.mix >= 0.5 ? s.to : s.from;
   }
 
   view(t) {
@@ -283,17 +338,20 @@ export class Clip {
 
   /* ── Verbs ── */
 
-  /** Lean in at t: the camera springs from where it is onto a box (or the frame's centre) and settles there. */
+  /**
+   * Lean in at t: the camera springs from where it is onto a box (or the
+   * frame's centre) and settles there. Returns the new move.
+   */
   leanInHere(t, boxNameToUse) {
     const from = this.view(t);
     const box = boxNameToUse ? this.boxes[boxNameToUse] : null;
     const land = box ? { focus: { ...box } } : { cx: r3(from[2] > 1.0005 ? from[0] : 0.5), cy: r3(from[2] > 1.0005 ? from[1] : 0.5), z: LEAN_Z };
-    this.insertMove(t, from, land);
+    return this.insertMove(t, from, land);
   }
 
-  /** Pull back at t: spring out to the wide view and hold. */
+  /** Pull back at t: spring out to the wide view and hold. Returns the new move. */
   pullBackHere(t) {
-    this.insertMove(t, this.view(t), { wide: true });
+    return this.insertMove(t, this.view(t), { wide: true });
   }
 
   insertMove(t, from, land) {
@@ -348,29 +406,73 @@ export class Clip {
 
   /* ── Notes, each with a fix where one is clear ── */
 
+  /**
+   * What needs a look, each in a sentence and, where the fix is clear, with
+   * the fix: `{level, text, t?, shot?, fix?: {label, apply}}`. A note with
+   * no `shot` is about the clip as a whole.
+   */
   notes() {
     const spec = normalizeSpec(clean(this.spec));
     const { errors, warnings } = checkSpec(spec);
     const shots = this.shots;
-    const out = [
-      ...errors.map((text) => ({ level: 'error', text })),
-      ...warnings.map((text) => ({ level: 'warn', text })),
-    ];
+    const out = errors.map((text) => ({ level: 'error', text }));
+    const leanedPast = new Set();
+    for (const text of warnings) {
+      const past = /^camera\[(\d+)\] leans in to ([\d.]+)/.exec(text);
+      if (!past) {
+        out.push({ level: 'warn', text: text.replace(/^./, (c) => c.toUpperCase()) });
+        continue;
+      }
+      /* Every keyframe of a close hold is past, but it is the move onto it that leans too far. */
+      let shot = shots.find((sh) => sh.id === this.spec.camera[Number(past[1])].id);
+      if (shot?.kind === 'hold') shot = shots.find((sh) => sh.id === shot.fromId && sh.kind !== 'hold') ?? shot;
+      if (!shot || leanedPast.has(shot.id)) continue;
+      leanedPast.add(shot.id);
+      const [cx, cy] = resolve(this.spec.camera[this.keyIndex(shot.id)]);
+      out.push({
+        level: 'warn',
+        t: shot.t0,
+        shot: shot.id,
+        text: `Leans in to ${Number(past[2]).toFixed(2)}×, past ${LEAN_Z}×. Text softens and the product loses its context.`,
+        fix: { label: `Ease it to ${LEAN_Z}×`, apply: () => this.frameShot(this.shotById(shot.id), [cx, cy, LEAN_Z]) },
+      });
+    }
     for (const n of directorsNotes(spec, this.take, { W: this.info.master.width, OW: this.info.output.width, fps: this.info.master.fps })) {
       if (n.level === 'ok') continue;
       const moving = /still moving/.test(n.text);
       const shot = shots.find((s) => n.t > s.t0 && n.t < s.t1 && s.kind !== 'hold');
       const beat = this.beats.find((b) => Math.abs(b.t - n.t) < 1e-6);
+      if (moving && shot && beat) {
+        const when = beatWords(beat.label);
+        out.push({
+          level: n.level,
+          t: n.t,
+          shot: shot.id,
+          text: `Still moving when “${when}” happens. The camera should be still by then.`,
+          fix: shot.kind === 'pull'
+            ? { label: `Pull back after ${when}`, apply: () => this.startAfter(shot, beat.t) }
+            : { label: `Settle before ${when}`, apply: () => this.settleBefore(shot, beat.t) },
+        });
+        continue;
+      }
+      const last = shots[shots.length - 1];
+      if (/final hold/.test(n.text)) {
+        out.push({
+          level: n.level,
+          t: n.t,
+          shot: last.id,
+          text: `The last hold is ${(last.t1 - last.t0).toFixed(2)}s. Give it ${ESTABLISH}s so the finished state lands.`,
+          fix: { label: `Hold for ${ESTABLISH}s`, apply: () => this.setKeyTime(last.id, last.t0 + ESTABLISH) },
+        });
+        continue;
+      }
+      const soft = /^soft at ([\d.]+)s: the lean upscales the master ([\d.]+)x/.exec(n.text);
       out.push({
         level: n.level,
         t: n.t,
-        shot: shot?.id,
-        text: moving && beat ? `Still moving when ${beat.label} happens` : n.text.replace(/^./, (c) => c.toUpperCase()),
-        fix: moving && shot && beat
-          ? shot.kind === 'pull'
-            ? { label: `Pull back after ${beat.label}`, apply: () => this.startAfter(shot, beat.t) }
-            : { label: `Settle before ${beat.label}`, apply: () => this.settleBefore(shot, beat.t) }
-          : this.softFix(n),
+        shot: soft ? this.shotAt(n.t)?.id : shot?.id,
+        text: soft ? `Soft at ${soft[1]}s. This lean enlarges the take ${soft[2]}×, so text blurs.` : n.text.replace(/^./, (c) => c.toUpperCase()),
+        fix: soft ? this.softFix() : undefined,
       });
     }
     for (const shot of shots) {
@@ -382,7 +484,7 @@ export class Clip {
         level: 'warn',
         t: onset,
         shot: shot.id,
-        text: 'The product is changing during this move',
+        text: 'The product changes during this move. The camera should hold still for that.',
         fix: shot.kind === 'pull'
           ? { label: 'Pull back once it is still', apply: () => this.startAfter(shot, still) }
           : { label: 'Settle before the change', apply: () => this.settleBefore(shot, onset) },
@@ -422,8 +524,8 @@ export class Clip {
     if (after && after.t1 > want + 0.01) this.setKeyTime(shot.id, Math.max(after.t0 + 0.3, want));
   }
 
-  softFix(n) {
-    if (!/^soft/.test(n.text)) return undefined;
+  /** Bring every lean back to the tightest one the master can fill with real pixels. */
+  softFix() {
     const zMax = this.info.master.width / this.info.output.width;
     return {
       label: `Cap the lean at ${zMax.toFixed(2)}×`,
@@ -451,16 +553,38 @@ export class Clip {
     return r;
   }
 
-  async render(onProgress) {
-    if (this.dirty) await this.save();
-    const start = await fetch(`/api/clip/${encodeURIComponent(this.name)}/render`, { method: 'POST' });
-    if (!start.ok && start.status !== 409) throw new Error((await start.json()).error);
-    for (;;) {
-      await new Promise((r) => setTimeout(r, 400));
-      const job = await (await fetch(`/api/clip/${encodeURIComponent(this.name)}/render`)).json();
-      if (job.state === 'rendering') onProgress?.(job.done / Math.max(1, job.total));
-      else if (job.state === 'failed') throw new Error(job.error);
-      else return { ...job.result, url: `/media/out/${encodeURIComponent(this.name)}.mp4?v=${Date.now()}` };
+  /**
+   * Save if needed, then render on the server and follow it: `rendering`
+   * goes 0..1 while it runs (every step emits), and back to null at the end.
+   */
+  async render() {
+    if (this.rendering !== null) return null;
+    this.rendering = 0;
+    this.emit();
+    try {
+      if (this.dirty) await this.save();
+      const url = `/api/clip/${encodeURIComponent(this.name)}/render`;
+      const start = await fetch(url, { method: 'POST' });
+      if (!start.ok && start.status !== 409) throw new Error((await start.json()).error);
+      for (;;) {
+        await new Promise((r) => setTimeout(r, 400));
+        const job = await (await fetch(url)).json();
+        if (job.state === 'failed') throw new Error(job.error);
+        if (job.state !== 'rendering') {
+          this.info.rendered = Date.now();
+          return { ...job.result, url: this.renderUrl };
+        }
+        this.rendering = job.done / Math.max(1, job.total);
+        this.emit();
+      }
+    } finally {
+      this.rendering = null;
+      this.emit();
     }
+  }
+
+  /** The rendered file, or null before the first render. */
+  get renderUrl() {
+    return this.info.rendered ? `/media/out/${encodeURIComponent(this.name)}.mp4?v=${Math.round(this.info.rendered)}` : null;
   }
 }

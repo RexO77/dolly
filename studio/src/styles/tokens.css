@@ -1,75 +1,86 @@
 /*
- * Dolly's visual system. Neutral and monochrome: surfaces are alpha layers
- * over the canvas, text steps down in opacity, and colour appears only where
- * it means something (the wash, and a note that needs you).
+ * Dolly's visual system: paper and ink. A warm paper page, a cool near-black
+ * ink, and depth from tone steps (a grey well, a lighter tile inside it)
+ * rather than borders or shadows. Colour is functional and small: green for
+ * done, blue for in hand, amber for a note that needs you, red for undoing
+ * work. The wash is Dolly's one signature colour.
+ *
+ * Every colour is written once, as light-dark(light, dark), so any element
+ * that sets `color-scheme` flips its whole subtree: that is how a stage can
+ * sit dark inside a light page. The root follows the system unless the
+ * person picks a theme (data-theme on <html>).
  */
-:root {
-  color-scheme: light;
-  --canvas: oklch(0.975 0 0);
-  --panel: oklch(0.995 0 0);
-  --ink: 0 0 0;
-  --text-1: rgb(var(--ink) / 0.88);
-  --text-2: rgb(var(--ink) / 0.62);
-  --text-3: rgb(var(--ink) / 0.48);
-  --text-4: rgb(var(--ink) / 0.3);
-  --surface: rgb(var(--ink) / 0.04);
-  --surface-2: rgb(var(--ink) / 0.065);
-  --hover: rgb(var(--ink) / 0.085);
-  --active: rgb(var(--ink) / 0.12);
-  --line: rgb(var(--ink) / 0.08);
-  --line-2: rgb(var(--ink) / 0.14);
-  --focus: rgb(var(--ink) / 0.55);
-  --primary-bg: oklch(0.22 0 0);
-  --primary-fg: oklch(0.99 0 0);
-  --wash: oklch(0.9 0.035 78);
-  --wash-line: oklch(0.72 0.06 72);
-  --note: oklch(0.62 0.15 62);
-  --note-bg: oklch(0.62 0.15 62 / 0.1);
-  --scrim: rgb(20 20 20 / 0.5);
-  --shadow-panel: 0 0 0 1px rgb(var(--ink) / 0.06), 0 1px 2px rgb(var(--ink) / 0.04), 0 8px 24px -6px rgb(var(--ink) / 0.1);
-  --shadow-float: 0 0 0 1px rgb(var(--ink) / 0.07), 0 2px 6px rgb(var(--ink) / 0.06), 0 16px 40px -8px rgb(var(--ink) / 0.18);
+@property --stage-ink {
+  /* Registered, so it resolves where it is declared (the root) and stays the page's scheme's ink inside a dark stage. */
+  syntax: "<color>";
+  inherits: true;
+  initial-value: black;
+}
 
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+:root {
+  color-scheme: light dark;
+
+  /* Tone steps, lightest to deepest in light mode, and the other way in dark. */
+  --page: light-dark(oklch(0.969 0.004 106.5), oklch(0.198 0.006 301));
+  --well: light-dark(oklch(0.93 0.007 106.5), oklch(0.238 0.007 301));
+  --tile: light-dark(oklch(0.985 0.0013 106.4), oklch(0.276 0.008 301));
+  --tile-hover: light-dark(oklch(0.993 0.001 106.4), oklch(0.3 0.008 301));
+  --stage-ink: light-dark(oklch(0.198 0.006 301), oklch(0.145 0.005 301));
+
+  --text-1: light-dark(oklch(0.216 0.008 297), oklch(0.955 0.003 106.4));
+  --text-2: light-dark(oklch(0.43 0.008 297), oklch(0.8 0.004 106.4));
+  --text-3: light-dark(oklch(0.54 0.008 297), oklch(0.66 0.005 301));
+  --text-4: light-dark(oklch(0.72 0.006 297), oklch(0.46 0.006 301));
+
+  /* Fills are alpha, so a control reads the same on a page, a well or a tile. */
+  --fill: light-dark(oklch(0.216 0.008 297 / 0.06), oklch(1 0 0 / 0.07));
+  --fill-hover: light-dark(oklch(0.216 0.008 297 / 0.1), oklch(1 0 0 / 0.11));
+  --fill-active: light-dark(oklch(0.216 0.008 297 / 0.15), oklch(1 0 0 / 0.16));
+  --line: light-dark(oklch(0.216 0.008 297 / 0.09), oklch(1 0 0 / 0.08));
+  --line-2: light-dark(oklch(0.216 0.008 297 / 0.16), oklch(1 0 0 / 0.14));
+  --focus: light-dark(oklch(0.216 0.008 297 / 0.6), oklch(1 0 0 / 0.6));
+  --image-edge: light-dark(oklch(0 0 0 / 0.1), oklch(1 0 0 / 0.1));
+
+  --primary-bg: var(--text-1);
+  --primary-fg: var(--page);
+  /* The playhead, the open shot, the current step. Ink here; a direction may make it the wash. */
+  --accent: var(--text-1);
+
+  --wash: oklch(0.93 0.03 78);
+  --wash-line: light-dark(oklch(0.7 0.07 72), oklch(0.86 0.05 78));
+  --ok: light-dark(oklch(0.55 0.13 150), oklch(0.78 0.14 150));
+  --info: light-dark(oklch(0.56 0.11 250), oklch(0.78 0.09 245));
+  --note: light-dark(oklch(0.64 0.15 62), oklch(0.8 0.13 72));
+  --note-bg: light-dark(oklch(0.64 0.15 62 / 0.12), oklch(0.8 0.13 72 / 0.13));
+  --danger: light-dark(oklch(0.55 0.18 27), oklch(0.72 0.15 25));
+
+  --shadow-pill: 0 1px 2px light-dark(oklch(0.2 0.01 297 / 0.1), oklch(0 0 0 / 0.3)), 0 0 0 0.5px light-dark(oklch(0.2 0.01 297 / 0.06), oklch(1 0 0 / 0.08));
+  --shadow-float: 0 0 0 0.5px light-dark(oklch(0.2 0.01 297 / 0.1), oklch(1 0 0 / 0.1)), 0 12px 32px -8px light-dark(oklch(0.2 0.01 297 / 0.22), oklch(0 0 0 / 0.6));
+
+  /* One neo-grotesk, one mono. Values (times, zooms, commands) are always in the mono. */
+  --sans: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --text-xs: 11px;
   --text-s: 12px;
   --text-m: 13px;
-  --text-l: 15px;
-  --weight: 500;
-  --weight-strong: 600;
+  --text-l: 16px;
+  --text-xl: 27px;
+  --weight: 450;
+  --weight-strong: 560;
+  --track: -0.01em;
+  --track-head: -0.025em;
+  --track-title: -0.04em;
 
-  --radius: 8px;
+  --radius-well: 14px;
+  --radius-tile: 9px;
+  --radius: 9px;
   --radius-s: 6px;
-  --row: 36px;
   --gap: 6px;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-move: cubic-bezier(0.32, 0.72, 0, 1);
+  /* A spring's shape as a curve: rows lift on it and settle without a bounce you can see. */
+  --ease-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --canvas: oklch(0.155 0 0);
-    --panel: oklch(0.19 0 0);
-    --ink: 255 255 255;
-    --text-1: rgb(var(--ink) / 0.94);
-    --text-2: rgb(var(--ink) / 0.68);
-    --text-3: rgb(var(--ink) / 0.52);
-    --text-4: rgb(var(--ink) / 0.34);
-    --surface: rgb(var(--ink) / 0.05);
-    --surface-2: rgb(var(--ink) / 0.075);
-    --hover: rgb(var(--ink) / 0.1);
-    --active: rgb(var(--ink) / 0.14);
-    --line: rgb(var(--ink) / 0.08);
-    --line-2: rgb(var(--ink) / 0.14);
-    --focus: rgb(var(--ink) / 0.6);
-    --primary-bg: oklch(0.96 0 0);
-    --primary-fg: oklch(0.18 0 0);
-    --wash-line: oklch(0.86 0.05 78);
-    --note: oklch(0.8 0.13 72);
-    --note-bg: oklch(0.8 0.13 72 / 0.12);
-    --scrim: rgb(0 0 0 / 0.55);
-    --shadow-panel: 0 0 0 1px rgb(255 255 255 / 0.07);
-    --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.09), 0 16px 40px -8px rgb(0 0 0 / 0.6);
-  }
-}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
