@@ -195,7 +195,7 @@ export function App() {
           {FEATURES.map(({ title, body, Demo }) => (
             <article className="feature" key={title}>
               {tour ? <Demo tour={tour} /> : <div className="demo" style={{ aspectRatio: '16 / 11' }} />}
-              <div>
+              <div className="feature-text">
                 <h3>{title}</h3>
                 {body.map((p) => <p key={p}>{withCode(p)}</p>)}
               </div>

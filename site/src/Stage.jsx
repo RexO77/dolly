@@ -73,6 +73,7 @@ export function Stage({ tour }) {
   const [wash, setWash] = useState(true);
   const [playing, setPlaying] = useState(null);
   const [ready, setReady] = useState(false);
+  const [started, setStarted] = useState(false);
 
   const video = useRef(null);
   const canvas = useRef(null);
@@ -177,6 +178,9 @@ export function Stage({ tour }) {
   syncRef.current = sync;
   useEffect(() => sync());
   useEffect(() => {
+    if (playing) setStarted(true);
+  }, [playing]);
+  useEffect(() => {
     const io = new IntersectionObserver(([e]) => {
       visible.current = e.isIntersecting;
       syncRef.current();
@@ -241,7 +245,7 @@ export function Stage({ tour }) {
   else if (Math.abs(lean - LEAN_Z) > 0.005) note = `Leaning to ${lean.toFixed(2)}×. Dolly's own direction is ${LEAN_Z}×: as far as a lean goes before text softens.`;
 
   return (
-    <div className="stage" aria-label="A live clip of a demo product, directed by Dolly">
+    <div className="stage" role="region" aria-label="A live clip of a demo product, directed by Dolly">
       <div className="stage-bar">
         <p className="readout" aria-hidden="true">
           <span className="shot" ref={readShot}>shot 1</span>
@@ -253,7 +257,7 @@ export function Stage({ tour }) {
       <div className="frame" ref={frameBox}>
         <img src={media('take.webp')} alt="" width="1600" height="1000" hidden={ready} />
         <canvas ref={canvas} role="img" aria-label="Wrenly, a project tracker: the list filters to two issues, then one is opened and marked done" />
-        {playing === false && ready && (
+        {playing === false && ready && !started && (
           <button type="button" className="big-play" aria-label="Play the clip" onClick={() => setPlaying(true)}>
             <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z" fill="currentColor" /></svg>
           </button>
