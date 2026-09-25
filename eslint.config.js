@@ -2,7 +2,7 @@ import js from '@eslint/js';
 import globals from 'globals';
 
 export default [
-  { ignores: ['legacy/', 'node_modules/', 'masters/', 'out/', '.tmp/', 'studio/dist/'] },
+  { ignores: ['legacy/', 'node_modules/', 'masters/', 'out/', '.tmp/', 'studio/dist/', 'site/dist/', 'examples/*/masters/', 'examples/*/out/', 'examples/*/.dolly/'] },
   js.configs.recommended,
   {
     languageOptions: {
@@ -16,7 +16,7 @@ export default [
     },
   },
   {
-    files: ['studio/src/**/*.{js,jsx}'],
+    files: ['studio/src/**/*.{js,jsx}', 'site/src/**/*.{js,jsx}'],
     languageOptions: { parserOptions: { ecmaFeatures: { jsx: true } } },
   },
 ];

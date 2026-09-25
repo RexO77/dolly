@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f5f2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
+  <title>Dolly: film your product, then direct the camera</title>
+  <meta name="description" content="Dolly records your web app with no cursor, then moves a camera over the take: in where something changes, still while it plays, back out to show the result. Open source, from the command line.">
+  <meta property="og:title" content="Dolly">
+  <meta property="og:description" content="Film your product, then direct the camera.">
+  <meta property="og:image" content="https://rexo77.github.io/dolly/media/directed.webp">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wdth,wght@75..100,400..700&display=swap">
+  <link rel="preload" as="image" href="/media/take.webp">
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>
+    <main style="max-width: 720px; margin: 64px auto; padding: 0 16px; font: 16px/1.55 system-ui, sans-serif">
+      <h1>Dolly: film your product, then direct the camera.</h1>
+      <p>Dolly records your web app with no cursor, then moves a camera over the take and renders a clip for your site.</p>
+      <video src="media/directed.mp4" poster="media/directed.webp" controls muted playsinline style="width: 100%"></video>
+      <p><code>npm install -g @nischalskanda/dolly</code></p>
+      <p><a href="https://github.com/RexO77/dolly">github.com/RexO77/dolly</a></p>
+    </main>
+  </noscript>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
