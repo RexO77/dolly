@@ -163,7 +163,7 @@ export function ArrowIcon() {
 
 /** Dolly's mark: the crop frame and its lens, in the version for the page's theme. */
 export function Mark({ theme }) {
-  return <img className="mark-img" src={asset(`icon-${theme}-small.svg`)} alt="" width="28" height="28" />;
+  return <img className="mark-img" src={asset(`icon-${theme}.svg`)} alt="" width="28" height="28" />;
 }
 
 /** The dolly on its track: a small carriage straddling the rails, its centre the playhead. */

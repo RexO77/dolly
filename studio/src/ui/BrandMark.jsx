@@ -14,5 +14,5 @@ export function BrandMark() {
     read();
     return () => mo.disconnect();
   }, []);
-  return <img className="brand-mark" src={`/icon-${theme}-small.svg`} alt="" width="20" height="20" />;
+  return <img className="brand-mark" src={`/icon-${theme}.svg`} alt="" width="20" height="20" />;
 }
