@@ -143,13 +143,13 @@ test('a cut and an end shorten the clip', () => {
   assert.equal(clipLength(10, { end: 6 }), 6);
 });
 
-const project = { name: 'question-library', alias: 'ql' };
+const project = { name: 'wrenly', alias: 'wr' };
 const summary = (status, extra) => ({ name: 'rec-walk', status: { scenario: true, master: false, take: false, camera: false, rendered: false, stale: false, ...status }, ...extra });
 
 test('each clip has one plain state and one next step', () => {
   const unrecorded = stageOf(project, summary({}));
   assert.equal(unrecorded.label, 'Not recorded yet');
-  assert.deepEqual(unrecorded.next, { kind: 'command', label: 'Record it', command: 'dolly record ql rec-walk' });
+  assert.deepEqual(unrecorded.next, { kind: 'command', label: 'Record it', command: 'dolly record wr rec-walk' });
 
   assert.equal(stageOf(project, summary({ scenario: false })).next, null, 'nothing to record without a scenario');
 
