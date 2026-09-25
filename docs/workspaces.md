@@ -64,11 +64,11 @@ On a terminal it asks for anything it cannot infer; otherwise pass it as a flag.
 | `name` | the project's name; the folder name when missing |
 | `alias` | a short name any command accepts in its place (`dolly record fn ...`) |
 | `base` | where the product answers; required |
-| `start` | `{cwd, cmd}`: how to start the dev server when nothing answers at `base`. Without it, start the product yourself |
+| `start` | `{cwd, cmd}`: how to start the dev server when nothing answers at `base`. A relative `cwd` is relative to the workspace. Without it, start the product yourself |
 | `viewport` | `{width, height, dpr}`, 1440x900 at 2 by default |
 | `query` | query parameters on every clip's URL, before any hash route |
 | `preset` | the delivery preset: `web-1920` |
-| `deliver` | named folders a clip's render is copied to; a clip picks one with `meta.deliver` |
+| `deliver` | named folders a clip's render is copied to (relative ones are relative to the workspace); a clip picks one with `meta.deliver` |
 
 Paths may start with `~`. Dolly writes into a `deliver` folder only through `dolly deliver`, and replaces a file there only with `--yes`.
 

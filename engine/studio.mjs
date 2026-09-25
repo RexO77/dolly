@@ -258,7 +258,10 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
 
   server.on('close', () => vite?.close());
   return new Promise((resolve, reject) => {
-    server.once('error', reject);
+    server.once('error', (error) => {
+      vite?.close();
+      reject(error);
+    });
     server.listen(port, '127.0.0.1', () => resolve({ server, url: `http://localhost:${port}` }));
   });
 }

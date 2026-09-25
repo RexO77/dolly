@@ -38,3 +38,11 @@ test('a clip URL keeps its hash route and puts the query before it', async () =>
   assert.equal(clipUrl(p, { url: '/#/browser', query: p.query }), 'http://localhost:3000/?demo=1#/browser');
   assert.equal(clipUrl(p, { url: '/lab/?v=4', query: p.query }), 'http://localhost:3000/lab/?v=4&demo=1');
 });
+
+test('relative folders in project.json are relative to the workspace, not where Dolly runs', async () => {
+  const root = workspace();
+  writeFileSync(join(root, 'projects', 'shop', 'project.json'), JSON.stringify({ base: 'http://localhost:3000', start: { cwd: 'app', cmd: 'node serve.mjs' }, deliver: { default: 'site/media' } }));
+  const p = await loadProject(loadWorkspace({ workspace: root }), 'shop');
+  assert.equal(p.start.cwd, join(root, 'app'));
+  assert.equal(p.deliver.default, join(root, 'site', 'media'));
+});

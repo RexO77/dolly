@@ -59,8 +59,9 @@ export async function loadProject(ws, name, { masters, out } = {}) {
     workspace: ws,
     viewport: { width: 1440, height: 900, dpr: 2, ...config.viewport },
     query: config.query ?? {},
-    start: config.start && { ...config.start, cwd: expand(config.start.cwd) },
-    deliver: Object.fromEntries(Object.entries(config.deliver ?? {}).map(([key, dir]) => [key, expand(dir)])),
+    /* Relative folders in project.json are relative to the workspace, wherever Dolly is run from. */
+    start: config.start && { ...config.start, cwd: expand(config.start.cwd, ws.root) },
+    deliver: Object.fromEntries(Object.entries(config.deliver ?? {}).map(([key, dir]) => [key, expand(dir, ws.root)])),
     preset,
     hooks,
     paths: {

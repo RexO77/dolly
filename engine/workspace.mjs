@@ -17,8 +17,8 @@ import { readJson } from './files.mjs';
 
 export const WORKSPACE_FILE = 'dolly.json';
 
-/** A path with a leading ~ expanded to the home folder, made absolute. */
-export const expand = (p) => (p ? resolve(p.replace(/^~(?=$|\/)/, homedir())) : p);
+/** A path with a leading ~ expanded to the home folder, made absolute from `base`. */
+export const expand = (p, base = process.cwd()) => (p ? resolve(base, p.replace(/^~(?=$|\/)/, homedir())) : p);
 
 /** The folder holding dolly.json at or above `from`, or null. */
 export function findRoot(from = process.cwd()) {
