@@ -9,4 +9,13 @@ applyTheme(storedTheme());
 const library = new Library();
 const root = createRoot(document.getElementById('root'));
 
-root.render(<App library={library} />);
+/* PROTO: three visual directions behind a picker, in development only (the built Studio never has it).
+ * Once one is chosen: replace this block with `root.render(<App library={library} />);`, delete
+ * studio/src/proto/, and fold the chosen direction into tokens.css and studio.css. */
+if (import.meta.env.DEV) {
+  const { Directions } = await import('./proto/Directions.jsx');
+  root.render(<Directions>{(key) => <App key={key} library={library} />}</Directions>);
+} else {
+  root.render(<App library={library} />);
+}
+/* /PROTO */
