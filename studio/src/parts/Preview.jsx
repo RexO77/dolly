@@ -1,22 +1,29 @@
 /**
- * The picture. "Picture" is the clip as it will ship. "Frame" is the whole
- * screen with the selected shot's frame on it: drag inside the frame to
- * reframe the shot, drag a corner to lean in or out. "Render" plays the
+ * The picture. "Preview" is the clip as it will render. "Framing" is the
+ * whole screen with the open shot's frame on it: drag inside the frame to
+ * reframe the shot, drag a corner to lean in or out. "Rendered" plays the
  * rendered file, to compare.
+ *
+ * Behind the picture sits a small copy of it, blurred by CSS into the light
+ * the footage throws on its surroundings. It is only drawn when a theme
+ * shows it (it is display: none otherwise).
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { resolve } from '../model/clip.js';
 import { drawDelivered, drawScreen } from '../model/picture.js';
-import { useClipVersion, useTime, cx } from '../hooks.js';
+import { useVersion, usePicture, cx } from '../hooks.js';
+
+const AMBIENT = { width: 32, height: 20 };
 
 export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
   const box = useRef(null);
   const canvas = useRef(null);
   const rendered = useRef(null);
+  const ambient = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [frame, setFrame] = useState(null);
-  const version = useClipVersion(clip);
-  const t = useTime(transport);
+  const version = useVersion(clip);
+  const { t, frame: landed } = usePicture(transport);
 
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
@@ -43,7 +50,7 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
       }
       const ctx = c.getContext('2d');
       const target = shot ? resolve(clip.spec.camera[clip.keyIndex(shot.id)]) : clip.view(t);
-      const r = drawScreen(ctx, video, clip, t, w, h, target);
+      const r = drawScreen(ctx, video, clip, t, w, h, target, transport.fade);
       ctx.save();
       ctx.beginPath();
       ctx.rect(r.ox, r.oy, r.pw, r.ph);
@@ -57,16 +64,18 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
         c.width = OW;
         c.height = OH;
       }
-      drawDelivered(c.getContext('2d'), video, clip, t, OW, OH);
+      drawDelivered(c.getContext('2d'), video, clip, t, OW, OH, transport.fade);
       setFrame(null);
     }
-  }, [t, version, mode, shot, size, cssW, clip, video, OW, OH]);
+    const a = ambient.current;
+    if (a?.offsetParent) a.getContext('2d').drawImage(c, 0, 0, AMBIENT.width, AMBIENT.height);
+  }, [t, landed, version, mode, shot, size, cssW, clip, video, transport, OW, OH]);
 
   useEffect(() => {
     const v = rendered.current;
     if (mode !== 'render' || !v) return;
     if (Math.abs(v.currentTime - t) > 0.1) v.currentTime = t;
-    if (transport.playing && v.paused) v.play();
+    if (transport.playing && v.paused) v.play().catch(() => {}); // refused in a background tab; the seeks above keep it on time
     if (!transport.playing && !v.paused) v.pause();
   }, [mode, t, transport]);
 
@@ -101,26 +110,30 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
   };
 
   return (
-    <div className="preview" ref={box}>
-      {mode === 'render' && renderUrl ? (
-        <video ref={rendered} className="preview-media" src={renderUrl} muted playsInline style={{ width: cssW, height: cssH }} />
-      ) : (
-        <canvas ref={canvas} className={cx('preview-media', mode === 'frame' && 'preview-screen')} style={mode === 'frame' ? { width: size.w, height: size.h } : { width: cssW, height: cssH }} />
-      )}
-      {mode === 'frame' && frame && (
-        <div
-          className={cx('frame', !shot && 'frame-idle')}
-          style={{ left: frame.x, top: frame.y, width: frame.w, height: frame.h }}
-          onPointerDown={onFrameDown}
-          onPointerMove={onFrameMove}
-          onPointerUp={onFrameUp}
-          aria-label="The shot's frame: drag to reframe it, drag a corner to lean in or out"
-          role="group"
-        >
-          {['tl', 'tr', 'bl', 'br'].map((c) => <span key={c} className={`frame-corner frame-${c}`} data-corner={c} />)}
-          <span className="frame-tag">{frame.zoom <= 1.0005 ? 'Wide' : `${frame.zoom.toFixed(2)}×`}</span>
-        </div>
-      )}
+    <div className="preview">
+      <canvas ref={ambient} className="preview-ambient" width={AMBIENT.width} height={AMBIENT.height} aria-hidden="true" />
+      {/* A click on the picture plays or pauses it, as on any video; space does the same from the keyboard. */}
+      <div className="preview-box" ref={box} onClick={mode === 'frame' ? undefined : () => transport.toggle()}>
+        {mode === 'render' && renderUrl ? (
+          <video ref={rendered} className="preview-media" src={renderUrl} muted playsInline style={{ width: cssW, height: cssH }} />
+        ) : (
+          <canvas ref={canvas} className={cx('preview-media', mode === 'frame' && 'preview-screen')} style={mode === 'frame' ? { width: size.w, height: size.h } : { width: cssW, height: cssH }} />
+        )}
+        {mode === 'frame' && frame && (
+          <div
+            className={cx('frame', !shot && 'frame-idle')}
+            style={{ left: frame.x, top: frame.y, width: frame.w, height: frame.h }}
+            onPointerDown={onFrameDown}
+            onPointerMove={onFrameMove}
+            onPointerUp={onFrameUp}
+            aria-label="The shot’s frame: drag it to reframe the shot, drag a corner to zoom"
+            role="group"
+          >
+            {['tl', 'tr', 'bl', 'br'].map((c) => <span key={c} className={`frame-corner frame-${c}`} data-corner={c} />)}
+            <span className="frame-tag">{frame.zoom <= 1.0005 ? 'Wide' : `${frame.zoom.toFixed(2)}×`}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

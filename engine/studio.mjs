@@ -5,7 +5,8 @@
  * engine/camera/math.mjs the renderer does.
  *
  * It reads a project's masters and takes, and writes only two things: the
- * clip's camera file (on Save) and the render in out/ (on Render).
+ * clip's camera file (on Save) and the render in out/ (on Render). Proxies
+ * and poster frames are scratch, under the workspace's .dolly/.
  */
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, readFileSync, renameSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -16,7 +17,7 @@ import { normalizeSpec, checkSpec } from './camera/math.mjs';
 import { outputSize } from './render.mjs';
 import { render, specFor, status } from './stages.mjs';
 
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp4': 'video/mp4', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 const STUDIO = join(PACKAGE, 'studio');
 
 function send(res, code, body, type = 'application/json') {
@@ -60,6 +61,50 @@ function proxy(project, clip) {
     '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', `${out}.part.mp4`]);
   renameSync(`${out}.part.mp4`, out);
   return out;
+}
+
+/**
+ * A still for the clip's card on the home screen. A render that is up to
+ * date has its own poster; otherwise a frame of the master, taken once the
+ * take has played out (just after its last beat, or 60% in) and kept until
+ * the master changes.
+ */
+function posterFrame(project, clip) {
+  const state = status(clip);
+  if (state.rendered && !state.stale && existsSync(clip.paths.poster)) return clip.paths.poster;
+  if (!state.master) return null;
+  const out = join(project.paths.tmp, 'posters', `${clip.name}.jpg`);
+  if (existsSync(out) && statSync(out).mtimeMs >= statSync(clip.paths.master).mtimeMs) return out;
+  const { duration } = probe(clip.paths.master);
+  const beats = existsSync(clip.paths.take) ? Object.values(JSON.parse(readFileSync(clip.paths.take, 'utf8')).beats ?? {}) : [];
+  const at = Math.min(duration - 0.1, beats.length ? Math.max(...beats) + 0.3 : duration * 0.6);
+  mkdirSync(join(out, '..'), { recursive: true });
+  ffmpeg(['-ss', at.toFixed(3), '-i', clip.paths.master, '-frames:v', '1', '-vf', 'scale=960:-2', '-q:v', '3', `${out}.part.jpg`]);
+  renameSync(`${out}.part.jpg`, out);
+  return out;
+}
+
+/** The title a scenario gives its clip in its opening comment (`rec-walk: "Walk down to it": ...`), or null. */
+function scenarioTitle(clip) {
+  if (!clip.file) return null;
+  return /^\/\*\*\s*\*\s*[\w.-]+:\s*"([^"]+)"/.exec(readFileSync(clip.file, 'utf8'))?.[1] ?? null;
+}
+
+/** One clip as the home screen lists it: where it stands, how long it runs, and its still. */
+async function clipSummary(project, name) {
+  const clip = await loadClip(project, name);
+  const state = status(clip);
+  const spec = state.master ? specFor(clip) : null;
+  const directed = state.camera ? JSON.parse(readFileSync(clip.paths.camera, 'utf8')).directed ?? 'scenario' : null;
+  return {
+    name,
+    title: scenarioTitle(clip),
+    status: state,
+    directedBy: directed,
+    duration: state.master ? probe(clip.paths.master).duration : null,
+    source: spec?.source ?? {},
+    poster: state.master ? `/media/poster/${encodeURIComponent(name)}?v=${Math.round(Math.max(statSync(clip.paths.master).mtimeMs, state.rendered ? statSync(clip.paths.out).mtimeMs : 0))}` : null,
+  };
 }
 
 /**
@@ -136,6 +181,7 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
     const take = existsSync(clip.paths.take) ? JSON.parse(readFileSync(clip.paths.take, 'utf8')) : null;
     return {
       name,
+      title: scenarioTitle(clip),
       spec: normalizeSpec(specFor(clip)),
       hasCamera: existsSync(clip.paths.camera),
       directs: Boolean(clip.direction || clip.camera),
@@ -154,16 +200,18 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
     try {
       if (path === '/api/project') {
         const clips = [];
-        for (const name of matchClips(project, [], { recorded: true })) {
-          const clip = await loadClip(project, name);
-          if (existsSync(clip.paths.master)) clips.push({ name, status: status(clip) });
-        }
-        return send(res, 200, { name: project.name, alias: project.alias, clips });
+        for (const name of matchClips(project, [], { recorded: true })) clips.push(await clipSummary(project, name));
+        return send(res, 200, { name: project.name, alias: project.alias, workspace: project.workspace.root, clips });
       }
       let m = /^\/media\/(master|out)\/([\w.-]+)\.mp4$/.exec(path);
       if (m) {
         const clip = await loadClip(project, m[2]);
         return file(req, res, m[1] === 'master' ? proxy(project, clip) : clip.paths.out);
+      }
+      m = /^\/media\/poster\/([\w.-]+)$/.exec(path);
+      if (m) {
+        const still = posterFrame(project, await loadClip(project, m[1]));
+        return still ? file(req, res, still) : send(res, 404, { error: `${m[1]} has no master yet` });
       }
       m = /^\/api\/clip\/([\w.-]+)\/activity$/.exec(path);
       if (m) return send(res, 200, await activity(await loadClip(project, m[1])));

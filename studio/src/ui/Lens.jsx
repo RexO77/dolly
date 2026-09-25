@@ -76,7 +76,7 @@ export function Lens({ value, onChange, onSettle, max = 2, width = 248, label = 
         }}
       >
         {ticks}
-        <line className="lens-index" x1={mid} x2={mid} y1={6} y2={h} />
+        <line className="lens-index" x1={mid} x2={mid} y1={20} y2={h} />
       </svg>
       <span className="lens-readout">{readout}</span>
     </div>

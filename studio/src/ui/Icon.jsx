@@ -4,16 +4,16 @@ const paths = {
   pause: <><rect x="4.5" y="3.5" width="2.4" height="9" rx=".6" fill="currentColor" stroke="none" /><rect x="9.1" y="3.5" width="2.4" height="9" rx=".6" fill="currentColor" stroke="none" /></>,
   undo: <path d="M6 4.5 3.5 7 6 9.5M3.8 7H10a2.75 2.75 0 0 1 0 5.5H8" />,
   redo: <path d="M10 4.5 12.5 7 10 9.5M12.2 7H6a2.75 2.75 0 0 0 0 5.5h2" />,
-  loop: <path d="M11.5 3.5 13 5l-1.5 1.5M13 5H6.5A3 3 0 0 0 3.5 8M4.5 12.5 3 11l1.5-1.5M3 11h6.5a3 3 0 0 0 3-3" />,
   frame: <path d="M3 6V4a1 1 0 0 1 1-1h2M10 3h2a1 1 0 0 1 1 1v2M13 10v2a1 1 0 0 1-1 1h-2M6 13H4a1 1 0 0 1-1-1v-2" />,
   back: <path d="M10 4 6 8l4 4" />,
   forward: <path d="m6 4 4 4-4 4" />,
-  close: <path d="m4.5 4.5 7 7m0-7-7 7" />,
   lean: <><path d="M3 6V4a1 1 0 0 1 1-1h2M10 3h2a1 1 0 0 1 1 1v2M13 10v2a1 1 0 0 1-1 1h-2M6 13H4a1 1 0 0 1-1-1v-2" /><rect x="6" y="6" width="4" height="4" rx=".75" /></>,
   wide: <><rect x="2.5" y="4" width="11" height="8" rx="1.25" /></>,
   wash: <><rect x="2.5" y="4" width="11" height="8" rx="1.25" fill="currentColor" fillOpacity=".18" /><rect x="5.5" y="6" width="5" height="4" rx=".75" /></>,
-  fix: <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />,
   chevron: <path d="m4.5 6.5 3.5 3.5 3.5-3.5" />,
+  arrow: <path d="M3.5 8h9M9 4.5 12.5 8 9 11.5" />,
+  copy: <><rect x="5.5" y="5.5" width="7" height="7" rx="1.5" /><path d="M10.5 3.5H5A1.5 1.5 0 0 0 3.5 5v5.5" /></>,
+  check: <path d="M3.5 8.5 6.5 11.5 12.5 4.5" />,
 };
 
 export function Icon({ name, size = 16, className }) {
