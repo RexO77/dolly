@@ -6,26 +6,21 @@
  */
 import { cameraAt, resolve, normalizeSpec, checkSpec } from '../../../engine/camera/math.mjs';
 import { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE } from '../../../engine/camera/grammar.mjs';
-import { segments, directorsNotes, boxName, poseOf } from '../../../engine/storyboard.mjs';
-import { resolveStage, stageAt } from '../../../engine/camera/stage.mjs';
-import { HERO_TILT } from '../../../engine/camera/grammar.mjs';
+import { segments, directorsNotes, boxName } from '../../../engine/storyboard.mjs';
 import { clipLength } from './project.js';
 
 export { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE, resolve, boxName };
 
 export const r3 = (n) => Math.round(n * 1000) / 1000;
-const r1 = (n) => Math.round(n * 10) / 10;
 const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-4);
 let nextId = 1;
 const withId = (k) => (k.id ? k : { ...k, id: nextId++ });
 /** The spec as it is saved: no in-memory ids. */
 const clean = (spec) => ({ ...spec, camera: spec.camera.map(({ id: _id, ...k }) => k) });
-/** What a keyframe carries besides where it frames: its curve and its stage pose. Kept when a shot is reframed. */
+/** What a keyframe carries besides where it frames: its curve. Kept when a shot is reframed. */
 const carry = (k) => ({
   ...(k.transition ? { transition: k.transition } : {}),
   ...(k.ease ? { ease: k.ease } : {}),
-  ...(k.tilt ? { tilt: k.tilt } : {}),
-  ...(k.inset !== undefined ? { inset: k.inset } : {}),
 });
 
 /** How much activity counts as the product changing. */
@@ -41,7 +36,6 @@ export function shotTitle(s) {
     if (s.target.kind === 'wide') return s.t0 === 0 ? 'Open wide' : 'Hold wide';
     return s.target.kind === 'box' ? `Hold on ${s.target.name}` : 'Hold close';
   }
-  if (s.kind === 'turn') return s.flat ? 'Turn it flat' : 'Turn the card';
   if (s.kind === 'lean') return `Lean in${on}`;
   if (s.kind === 'pull') return 'Pull back to wide';
   return `Hop${s.target.kind === 'box' ? ` to ${s.target.name}` : ' across'}`;
@@ -161,8 +155,6 @@ export class Clip {
       fromId: keys[s.from].id,
       target: this.targetOf(keys[s.to]),
       z: resolve(keys[s.to])[2],
-      tilt: { x: 0, y: 0, z: 0, ...keys[s.to].tilt },
-      flat: poseOf(keys[s.to]).slice(0, 3).every((v) => v === 0),
     }));
   }
 
@@ -265,8 +257,7 @@ export class Clip {
   tidy() {
     const k = this.spec.camera;
     for (let i = k.length - 2; i > 0; i -= 1) {
-      const same = (a, b) => near(resolve(a), resolve(b)) && near(poseOf(a), poseOf(b));
-      if (same(k[i - 1], k[i]) && same(k[i], k[i + 1])) k.splice(i, 1);
+      if (near(resolve(k[i - 1]), resolve(k[i])) && near(resolve(k[i]), resolve(k[i + 1]))) k.splice(i, 1);
     }
   }
 
@@ -373,85 +364,12 @@ export class Clip {
     const t1 = r3(Math.min(this.length, t0 + SPRING));
     const [cx, cy, z] = from;
     const start = z <= 1.0005 ? { t: t0, wide: true } : { t: t0, cx: r3(cx), cy: r3(cy), z: r3(z) };
-    /* A new move keeps the card's tilt where it is, so adding one never jolts the stage. */
-    const pose = this.poseTilt(t0);
     this.edit((s) => {
       /* The move replaces whatever the camera did in its span; what comes after starts from where it lands. */
       s.camera = s.camera.filter((k) => k.t < t0 - 0.02 || k.t > t1 + 0.02);
-      s.camera.push({ ...start, ...pose }, { t: t1, ...land, ...pose });
+      s.camera.push(start, { t: t1, ...land });
     }, { tidy: true });
     return this.shots.find((sh) => Math.abs(sh.t0 - t0) < 0.01 && sh.kind !== 'hold') ?? null;
-  }
-
-  /* ── The stage: the frame as a card turned in 3D over a background ── */
-
-  get stage() {
-    return resolveStage(this.spec.stage);
-  }
-
-  /** The card's pose {x, y, z, inset} at t, or null with no stage. */
-  pose(t) {
-    const stage = this.stage;
-    return stage ? stageAt(this.spec.camera, stage, t) : null;
-  }
-
-  /** The tilt at t as keyframe fields, rounded, or nothing when it is flat. */
-  poseTilt(t) {
-    const p = this.pose(t);
-    if (!p || (p.x === 0 && p.y === 0 && p.z === 0)) return {};
-    return { tilt: { x: r1(p.x), y: r1(p.y), z: r1(p.z) } };
-  }
-
-  /** Turn the stage on (with `patch`), or change it. */
-  setStage(patch, opts) {
-    this.edit((s) => {
-      s.stage = { ...(s.stage ?? {}), ...patch };
-    }, opts);
-  }
-
-  /** Turn the stage off: the frame fills the clip again, and every tilt goes with it. */
-  removeStage() {
-    this.edit((s) => {
-      delete s.stage;
-      for (const k of s.camera) {
-        delete k.tilt;
-        delete k.inset;
-      }
-    }, { tidy: true });
-  }
-
-  /** Tilt a shot's card: the keyframes it lands on, the same way framing a shot sets them. */
-  setTilt(shot, tilt, opts) {
-    const ids = [shot.id];
-    if (shot.kind === 'hold') ids.push(shot.fromId);
-    else {
-      const next = this.shots.find((s) => s.fromId === shot.id && s.kind === 'hold');
-      if (next) ids.push(next.id);
-    }
-    const flat = { x: r1(tilt.x), y: r1(tilt.y), z: r1(tilt.z) };
-    this.edit((s) => {
-      if (!s.stage) s.stage = {};
-      for (const id of ids) {
-        const k = s.camera.find((key) => key.id === id);
-        if (flat.x === 0 && flat.y === 0 && flat.z === 0) delete k.tilt;
-        else k.tilt = flat;
-      }
-    }, opts);
-  }
-
-  /**
-   * The product shot in one go: the stage on, the card tilted while the
-   * camera is wide, and turned flat for every lean, so the product is read
-   * straight on when it matters.
-   */
-  productShot() {
-    this.edit((s) => {
-      s.stage = { background: 'dusk', ...(s.stage ?? {}) };
-      for (const k of s.camera) {
-        if (resolve(k)[2] <= 1.0005) k.tilt = { ...HERO_TILT };
-        else delete k.tilt;
-      }
-    });
   }
 
   /** Remove a move: the camera stays where it was, so the move becomes part of the hold around it. */
