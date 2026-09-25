@@ -76,7 +76,7 @@ function posterFrame(project, clip) {
   const out = join(project.paths.tmp, 'posters', `${clip.name}.jpg`);
   if (existsSync(out) && statSync(out).mtimeMs >= statSync(clip.paths.master).mtimeMs) return out;
   const { duration } = probe(clip.paths.master);
-  const beats = existsSync(clip.paths.take) ? Object.values(JSON.parse(readFileSync(clip.paths.take, 'utf8')).beats ?? {}) : [];
+  const beats = Object.values(clipBeats(clip));
   const at = Math.min(duration - 0.1, beats.length ? Math.max(...beats) + 0.3 : duration * 0.6);
   mkdirSync(join(out, '..'), { recursive: true });
   ffmpeg(['-ss', at.toFixed(3), '-i', clip.paths.master, '-frames:v', '1', '-vf', 'scale=960:-2', '-q:v', '3', `${out}.part.jpg`]);
@@ -91,6 +91,12 @@ function scenarioTitle(clip) {
 }
 
 /** One clip as the home screen lists it: where it stands, how long it runs, and its still. */
+/** The clip's beats on the finished clip's clock: the camera's (synced to the picture) when it has them, else the take's as marked. */
+function clipBeats(clip) {
+  const read = (path) => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null);
+  return read(clip.paths.camera)?.beats ?? read(clip.paths.take)?.beats ?? {};
+}
+
 async function clipSummary(project, name) {
   const clip = await loadClip(project, name);
   const state = status(clip);
@@ -186,6 +192,7 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
       hasCamera: existsSync(clip.paths.camera),
       directs: Boolean(clip.direction || clip.camera),
       take,
+      beats: clipBeats(clip),
       master,
       output: outputSize(master, opts),
       css: take?.viewport?.dpr ?? master.width / clip.meta.viewport.width,
@@ -226,7 +233,7 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
           const clip = await loadClip(project, name);
           mkdirSync(project.paths.cameras, { recursive: true });
           /* Marked as directed by hand, so a re-record keeps it instead of rebuilding it from the scenario. */
-          const clean = { directed: 'studio', camera: spec.camera, spots: spec.spots, ...(Object.keys(spec.source).length ? { source: spec.source } : {}) };
+          const clean = { directed: 'studio', camera: spec.camera, spots: spec.spots, ...(Object.keys(spec.source).length ? { source: spec.source } : {}), ...(spec.beats ? { beats: spec.beats } : {}) };
           writeFileSync(clip.paths.camera, `${JSON.stringify(clean, null, 2)}\n`);
           log(`  saved ${project.workspace.rel(clip.paths.camera)}`);
           return send(res, 200, { saved: project.workspace.rel(clip.paths.camera), warnings });

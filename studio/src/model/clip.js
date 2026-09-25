@@ -96,7 +96,7 @@ export class Clip {
   }
 
   get beats() {
-    return Object.entries(this.info.take?.beats ?? {}).map(([label, t]) => ({ label, t })).sort((a, b) => a.t - b.t);
+    return Object.entries(this.info.beats ?? this.info.take?.beats ?? {}).map(([label, t]) => ({ label, t })).sort((a, b) => a.t - b.t);
   }
 
   get dirty() {

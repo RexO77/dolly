@@ -54,7 +54,8 @@ export function storyboard(spec, take = null) {
     what: s.kind === 'hold' || s.kind === 'pull' ? s.what : `${s.what}, z ${s.z.toFixed(3).replace(/\.?0+$/, '')}`,
     note: s.kind === 'hold' ? `${(s.t1 - s.t0).toFixed(2)}s` : `${s.ease} ${(s.t1 - s.t0).toFixed(2)}s`,
   }));
-  for (const [label, t] of Object.entries(take?.beats ?? {})) rows.push({ t, lane: 'beat', what: label });
+  /* The camera's beats are synced to the picture; the take's are as the scenario marked them. */
+  for (const [label, t] of Object.entries(spec.beats ?? take?.beats ?? {})) rows.push({ t, lane: 'beat', what: label });
   for (const s of spec.spots ?? []) {
     const name = boxName(s, boxes) ?? 'rect';
     rows.push({ t: s.in, lane: 'wash', what: `on ${name}`, note: `fade ${(s.fade ?? 0.5).toFixed(2)}s` });

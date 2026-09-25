@@ -45,7 +45,9 @@ export async function direct(project, clip, { redirect = false } = {}) {
   const built = clip.direction
     ? await fromDirection(clip.paths.master, take, clip.direction)
     : await clip.camera(take, tools(clip.paths.master, take));
-  writeJson(clip.paths.camera, built.spec ?? built);
+  /* The beats as the viewer sees them (synced to the picture, moved by cuts) travel with the camera, so the Studio snaps to what is on screen. */
+  const spec = built.spec ?? built;
+  writeJson(clip.paths.camera, built.beats ? { ...spec, beats: built.beats } : spec);
   return { written: clip.paths.camera, warnings: built.warnings ?? [], beats: built.beats };
 }
 

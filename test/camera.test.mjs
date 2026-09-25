@@ -68,3 +68,10 @@ test('the spring as a curve stays within 1.1% of the grammar spring and never ov
   assert.equal(progress({ transition: { type: 'easing', ease: [0, 0, 1, 1] } }, 0.25, 1).toFixed(3), '0.250');
   assert.equal(progress({}, 0.4, 1), spring(0.4), 'a keyframe without a transition keeps the grammar spring');
 });
+
+test('the text storyboard lists the camera\'s synced beats over the take\'s marked ones', async () => {
+  const { storyboard } = await import('../engine/storyboard.mjs');
+  const spec = { camera: [{ t: 0, x: 0.5, y: 0.5, z: 1 }, { t: 3, x: 0.5, y: 0.5, z: 1 }], beats: { open: 1.4 } };
+  const rows = storyboard(spec, { beats: { open: 1.1 }, boxes: {} });
+  assert.deepEqual(rows.filter((r) => r.lane === 'beat').map((r) => r.t), [1.4]);
+});
