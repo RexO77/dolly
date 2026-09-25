@@ -220,7 +220,10 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 .preview-loading { color: var(--text-3); }
 .preview-media { position: relative; display: block; border-radius: 4px; outline: 1px solid var(--image-edge); outline-offset: -1px; }
 .preview-screen { position: absolute; inset: 0; border-radius: 0; outline: none; }
-.preview-ambient { display: none; position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+.preview { --picture-well: var(--stage-ink); }
+/* A blurred copy of the picture glows on the well around it: the footage lights the room. */
+.preview-ambient { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); z-index: -1; pointer-events: none; filter: blur(36px) saturate(1.6); opacity: 0.22; }
+:root[data-theme="light"] .preview-ambient { opacity: 0.35; filter: blur(36px) saturate(2) brightness(0.8); }
 .frame { position: absolute; cursor: grab; touch-action: none; box-shadow: 0 0 0 1px oklch(1 0 0 / 0.7); }
 .frame:active { cursor: grabbing; }
 .frame-idle { pointer-events: none; box-shadow: 0 0 0 1px oklch(1 0 0 / 0.4); }
@@ -321,20 +324,33 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 .wash-swatch { width: 76px; aspect-ratio: 16 / 10; border-radius: 5px; background: linear-gradient(var(--wash), var(--wash)) center / 44% 46% no-repeat, color-mix(in oklch, var(--wash) 50%, var(--well)); box-shadow: inset 0 0 0 1px var(--line); }
 .section-head { padding-top: 16px; }
 
-/* ── Lens ring ── */
+/* ── Lens barrel ──
+ * A physical object, so it keeps its own finish in both themes: black
+ * anodised metal, white engraving, a rubber grip, the wash for the index
+ * and the lean, amber past the take's sharp limit. */
 
-.lens { position: relative; display: grid; gap: 2px; }
-.lens-ring {
-  display: block; border-radius: var(--radius); background: var(--fill); cursor: ew-resize; touch-action: none;
-  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+.lens { position: relative; display: grid; gap: 6px; }
+.lens-barrel {
+  display: block; cursor: grab; touch-action: none; border-radius: 9px;
+  box-shadow: 0 0 0 1px oklch(0 0 0 / 0.5), 0 1px 0 0.5px oklch(1 0 0 / 0.06), 0 10px 22px -10px oklch(0 0 0 / 0.8);
 }
-.lens-tick { stroke: var(--text-4); stroke-width: 1; }
-.lens-major { stroke: var(--text-3); }
-.lens-lean { stroke: var(--text-1); stroke-width: 1.5; }
-.lens-label { fill: var(--text-3); font: 10px var(--mono); }
-text.lens-lean { fill: var(--text-1); stroke: none; }
-.lens-index { stroke: var(--accent); stroke-width: 2; stroke-linecap: round; }
+.lens-barrel[data-gripped] { cursor: grabbing; }
+.lens-barrel:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.lens-body { fill: #1b1a1f; }
+.lens-collar { fill: #0e0d11; }
+.lens-grip { fill: #121115; }
+.lens-ridge { fill: #3b3a42; }
+.lens-mark { stroke: #ece9e2; stroke-linecap: round; }
+.lens-mark-major { stroke: #f6f4ef; }
+.lens-mark-lean { stroke: var(--wash); }
+.lens-engraving { fill: #ece9e2; font: 500 9.5px var(--mono); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.lens-mark-soft { stroke: var(--note); fill: var(--note); }
+.lens-lean-dot { fill: var(--wash); }
+.lens-chamfer { fill: #fff; opacity: 0.14; }
+.lens-seam { fill: #000; opacity: 0.7; }
+.lens-index { fill: var(--wash); }
 .lens-readout { font: var(--text-s) var(--mono); letter-spacing: 0; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.lens-state { color: var(--text-3); }
 
 /* ── Span bar ── */
 
@@ -388,3 +404,10 @@ text.lens-lean { fill: var(--text-1); stroke: none; }
   *, *::before, *::after { transition-duration: 0s !important; animation: none !important; }
 }
 .no-motion *, .no-motion *::before, .no-motion *::after { transition: none !important; }
+
+/* ── Night's finishing touches ── */
+.clip-poster { background: var(--stage-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .clip:hover .clip-poster img { box-shadow: 0 0 36px -6px color-mix(in oklch, var(--wash) 45%, transparent); }
+}
+.brand-mark { box-shadow: inset 0 0 0 1.5px var(--text-1), 0 0 14px -2px color-mix(in oklch, var(--wash) 60%, transparent); }

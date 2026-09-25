@@ -7,8 +7,8 @@
  *
  * Every colour is written once, as light-dark(light, dark), so any element
  * that sets `color-scheme` flips its whole subtree: that is how a stage can
- * sit dark inside a light page. The root follows the system unless the
- * person picks a theme (data-theme on <html>).
+ * sit dark inside a light page. The root is dark (Night) unless the person
+ * picks Light or the system's choice (data-theme on <html>).
  */
 @property --stage-ink {
   /* Registered, so it resolves where it is declared (the root) and stays the page's scheme's ink inside a dark stage. */
@@ -18,17 +18,18 @@
 }
 
 :root {
-  color-scheme: light dark;
+  /* Night: dark first, whatever the system says, until the person picks Light. The footage is the light in the room. */
+  color-scheme: dark;
 
   /* Tone steps, lightest to deepest in light mode, and the other way in dark. */
-  --page: light-dark(oklch(0.969 0.004 106.5), oklch(0.198 0.006 301));
-  --well: light-dark(oklch(0.93 0.007 106.5), oklch(0.238 0.007 301));
-  --tile: light-dark(oklch(0.985 0.0013 106.4), oklch(0.276 0.008 301));
-  --tile-hover: light-dark(oklch(0.993 0.001 106.4), oklch(0.3 0.008 301));
-  --stage-ink: light-dark(oklch(0.198 0.006 301), oklch(0.145 0.005 301));
+  --page: light-dark(oklch(0.969 0.004 106.5), oklch(0.165 0.006 301));
+  --well: light-dark(oklch(0.93 0.007 106.5), oklch(0.192 0.007 301));
+  --tile: light-dark(oklch(0.985 0.0013 106.4), oklch(0.222 0.008 301));
+  --tile-hover: light-dark(oklch(0.993 0.001 106.4), oklch(0.248 0.008 301));
+  --stage-ink: light-dark(oklch(0.9 0.008 106.5), oklch(0.115 0.004 301));
 
-  --text-1: light-dark(oklch(0.216 0.008 297), oklch(0.955 0.003 106.4));
-  --text-2: light-dark(oklch(0.43 0.008 297), oklch(0.8 0.004 106.4));
+  --text-1: light-dark(oklch(0.216 0.008 297), oklch(0.9 0.004 106.4));
+  --text-2: light-dark(oklch(0.43 0.008 297), oklch(0.74 0.005 106.4));
   --text-3: light-dark(oklch(0.54 0.008 297), oklch(0.66 0.005 301));
   --text-4: light-dark(oklch(0.72 0.006 297), oklch(0.46 0.006 301));
 
@@ -43,8 +44,8 @@
 
   --primary-bg: var(--text-1);
   --primary-fg: var(--page);
-  /* The playhead, the open shot, the current step. Ink here; a direction may make it the wash. */
-  --accent: var(--text-1);
+  /* The playhead, the open shot, the current step: the wash in the dark, ink in the light. */
+  --accent: light-dark(var(--text-1), var(--wash-line));
 
   --wash: oklch(0.93 0.03 78);
   --wash-line: light-dark(oklch(0.7 0.07 72), oklch(0.86 0.05 78));
@@ -58,7 +59,7 @@
   --shadow-float: 0 0 0 0.5px light-dark(oklch(0.2 0.01 297 / 0.1), oklch(1 0 0 / 0.1)), 0 12px 32px -8px light-dark(oklch(0.2 0.01 297 / 0.22), oklch(0 0 0 / 0.6));
 
   /* One neo-grotesk, one mono. Values (times, zooms, commands) are always in the mono. */
-  --sans: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --sans: "Hanken Grotesk Variable", "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   --mono: "DM Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
   --text-xs: 11px;
   --text-s: 12px;
@@ -84,3 +85,4 @@
 
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="system"] { color-scheme: light dark; }

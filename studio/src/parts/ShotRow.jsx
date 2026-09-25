@@ -91,7 +91,7 @@ export function ShotRow({ clip, shot, thumb, current, open, notes, onToggle, onF
                 <Segmented size="s" label={isMove ? 'Lands on' : 'Frames'} value={frames} options={frameOptions} onChange={setFrames} />
               </Field>
               <Field label="Zoom">
-                <Lens value={z} onChange={setZoom} onSettle={settle} max={Math.max(2, Math.ceil(z * 4) / 4)} />
+                <Lens value={z} onChange={setZoom} onSettle={settle} max={Math.max(2, Math.ceil(z * 4) / 4)} sharpMax={clip.info.master.width / clip.info.output.width} />
               </Field>
               {isMove && (
                 <Field label="Motion" hint={MOTION_HINT[curve.name]}>

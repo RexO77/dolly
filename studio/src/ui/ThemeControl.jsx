@@ -1,5 +1,5 @@
 /**
- * Light, dark, or the system's choice (the default). Kept per person in
+ * Dark (the default: Night), light, or the system's choice. Kept per person in
  * this browser, and applied before the first paint by `applyTheme()` in
  * main.jsx, so a reload never flashes the wrong theme.
  */
@@ -10,9 +10,9 @@ const KEY = 'dolly.theme';
 
 export function storedTheme() {
   try {
-    return localStorage.getItem(KEY) ?? 'system';
+    return localStorage.getItem(KEY) ?? 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }
 
@@ -20,8 +20,7 @@ export function storedTheme() {
 export function applyTheme(theme) {
   const root = document.documentElement;
   root.classList.add('no-motion');
-  if (theme === 'system') delete root.dataset.theme;
-  else root.dataset.theme = theme;
+  root.dataset.theme = theme;
   requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-motion')));
 }
 
@@ -42,7 +41,7 @@ export function ThemeControl() {
       label="Theme"
       value={theme}
       onChange={choose}
-      options={[{ value: 'system', label: 'System' }, { value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }]}
+      options={[{ value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'system', label: 'System' }]}
     />
   );
 }
