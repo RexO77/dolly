@@ -10,11 +10,13 @@
  * content is exactly the viewport: the cast is of the window's content, not
  * an emulated viewport, which is also why the pixel ratio cannot be forced.
  */
-import { chromium } from 'playwright-core';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { sleep } from './motion.mjs';
+
+/* Playwright is loaded on first use, so commands that never open Chrome start quickly. */
+const playwright = () => import('playwright-core').then((m) => m.chromium);
 
 /** The installed Google Chrome (Dolly never downloads a browser), or the binary DOLLY_CHROME names. */
 export const launchOptions = () => (process.env.DOLLY_CHROME ? { executablePath: process.env.DOLLY_CHROME } : { channel: 'chrome' });
@@ -31,7 +33,7 @@ function chromeError(error) {
 /** A headless Chrome, for work where pixels are not filmed: inspecting a page, checking the install. */
 export async function launchHeadless(options = {}) {
   try {
-    return await chromium.launch({ ...launchOptions(), ...options });
+    return await (await playwright()).launch({ ...launchOptions(), ...options });
   } catch (error) {
     throw chromeError(error);
   }
@@ -42,7 +44,7 @@ export async function openBrowser({ width, height }) {
   const profile = mkdtempSync(join(tmpdir(), 'dolly-'));
   let context;
   try {
-    context = await chromium.launchPersistentContext(profile, {
+    context = await (await playwright()).launchPersistentContext(profile, {
       ...launchOptions(),
       headless: false,
       viewport: null,
