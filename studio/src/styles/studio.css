@@ -133,8 +133,7 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 .topline { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 32px; }
 .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 560; letter-spacing: var(--track-head); }
 /* Dolly's mark: a frame of the wash with the subject left in ink. The same in both themes. */
-.brand-mark { --mark-ink: oklch(0.216 0.008 297); position: relative; width: 18px; height: 12px; border-radius: 3px; background: var(--wash); box-shadow: inset 0 0 0 1.5px var(--mark-ink); }
-.brand-mark::after { content: ""; position: absolute; inset: 3.5px 5.5px; border-radius: 1px; background: var(--mark-ink); }
+.brand-mark { display: block; width: 20px; height: 20px; border-radius: 5px; }
 .crumb { color: var(--text-3); }
 .home-head { display: grid; gap: 10px; }
 .home-head p { color: var(--text-2); font-size: var(--text-m); }
@@ -410,5 +409,5 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 @media (hover: hover) and (pointer: fine) {
   .clip:hover .clip-poster img { box-shadow: 0 0 36px -6px color-mix(in oklch, var(--wash) 45%, transparent); }
 }
-.brand-mark { box-shadow: inset 0 0 0 1.5px var(--text-1), 0 0 14px -2px color-mix(in oklch, var(--wash) 60%, transparent); }
+.brand-mark { box-shadow: 0 0 14px -3px color-mix(in oklch, var(--wash) 55%, transparent); }
 

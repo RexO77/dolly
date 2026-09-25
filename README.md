@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/dolly-icon-dark.svg">
+    <img src="docs/assets/dolly-icon-light.svg" alt="Dolly" width="96" height="96">
+  </picture>
+</p>
+
 # Dolly
 
 Film your real product. Then direct the camera.

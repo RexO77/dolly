@@ -8,6 +8,7 @@ import { STEPS, summaryOf } from '../model/project.js';
 import { useVersion } from '../hooks.js';
 import { Command } from '../ui/Command.jsx';
 import { ThemeControl } from '../ui/ThemeControl.jsx';
+import { BrandMark } from '../ui/BrandMark.jsx';
 import { ClipRow } from './ClipRow.jsx';
 
 const INTRO_KEY = 'dolly.intro-seen';
@@ -87,7 +88,7 @@ export function Home({ library, onOpen }) {
     <div className="home">
       <div className="home-inner">
         <header className="topline">
-          <span className="brand"><span className="brand-mark" aria-hidden="true" />Dolly <span className="crumb">Studio</span></span>
+          <span className="brand"><BrandMark />Dolly <span className="crumb">Studio</span></span>
           {introSeen && <button type="button" className="link" onClick={() => setIntroSeen(false)}>How it works</button>}
         </header>
 
