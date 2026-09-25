@@ -466,12 +466,12 @@ export class Clip {
         });
         continue;
       }
-      const soft = /^soft at ([\d.]+)s: the lean upscales the master ([\d.]+)x/.exec(n.text);
+      const soft = /^soft at ([\d.]+)s: the lean enlarges the master (\d+)%/.exec(n.text);
       out.push({
         level: n.level,
         t: n.t,
         shot: soft ? this.shotAt(n.t)?.id : shot?.id,
-        text: soft ? `Soft at ${soft[1]}s. This lean enlarges the take ${soft[2]}×, so text blurs.` : n.text.replace(/^./, (c) => c.toUpperCase()),
+        text: soft ? `Soft at ${soft[1]}s. This lean is ${soft[2]}% closer than the take has pixels for, so text blurs.` : n.text.replace(/^./, (c) => c.toUpperCase()),
         fix: soft ? this.softFix() : undefined,
       });
     }

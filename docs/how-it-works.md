@@ -290,7 +290,7 @@ The Studio reads the recording and the camera together and writes notes when som
 | --- | --- |
 | Still moving when a beat happens | **Settle before** that beat, or for a pull back, **Pull back after** it |
 | The product is changing during this move | **Settle before the change**, or **Pull back once it is still** |
-| Soft: the lean upscales the master | **Cap the lean** at the sharpest zoom the master allows |
+| Soft: the lean goes closer than the master has pixels for | **Cap the lean** at the sharpest zoom the master allows |
 
 It also warns when the final wide hold is shorter than 0.8 seconds.
 

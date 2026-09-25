@@ -8,6 +8,7 @@
  *    2.25  beat    data-science
  */
 import { resolve, cameraAt } from './camera/math.mjs';
+import { SOFT_BELOW } from './camera/grammar.mjs';
 
 const same = (a, b) => ['x', 'y', 'w', 'h'].every((k) => Math.abs(a[k] - b[k]) < 1e-6);
 const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-4);
@@ -100,7 +101,7 @@ export function directorsNotes(spec, take, { W, OW, fps = 30 }) {
     const ratio = W / z / OW;
     if (ratio < worst.ratio) worst = { ratio, t };
   }
-  if (worst.ratio < 1) notes.push({ level: 'warn', t: worst.t, text: `soft at ${worst.t.toFixed(2)}s: the lean upscales the master ${(1 / worst.ratio).toFixed(2)}x` });
+  if (worst.ratio < SOFT_BELOW) notes.push({ level: 'warn', t: worst.t, text: `soft at ${worst.t.toFixed(2)}s: the lean enlarges the master ${Math.round((1 / worst.ratio - 1) * 100)}% past its own pixels` });
   else if (Number.isFinite(worst.ratio)) notes.push({ level: 'ok', t: worst.t, text: `sharp throughout: at the tightest lean, ${worst.ratio.toFixed(2)} master pixels per delivered pixel` });
   return notes;
 }
