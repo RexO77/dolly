@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { sound } from '../../studio/src/ui/sound.js';
 
-/** A file in public/media, under the site's base path. */
-export const media = (file) => `${import.meta.env.BASE_URL}media/${file}`;
+/** A file in public/, under the site's base path. */
+export const asset = (file) => `${import.meta.env.BASE_URL}${file}`;
+/** A file in public/media. */
+export const media = (file) => asset(`media/${file}`);
 
 const query = '(prefers-reduced-motion: reduce)';
 
@@ -28,6 +31,7 @@ export function useCopy(ms = 1500) {
     } catch {
       return;
     }
+    sound.select();
     setCopied(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), ms);
@@ -40,8 +44,9 @@ export function useCopy(ms = 1500) {
  * (ms after the press) and `stage` is how far it has got. Nothing moves
  * until the visitor asks, and reduced motion jumps straight to the end.
  */
-export function useSequence(times, { reduced } = {}) {
-  const [stage, setStage] = useState(0);
+export function useSequence(times, { reduced, initial = 0 } = {}) {
+  const [stage, setStage] = useState(initial);
+  const [running, setRunning] = useState(false);
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const run = () => {
@@ -51,11 +56,60 @@ export function useSequence(times, { reduced } = {}) {
       return;
     }
     setStage(0);
-    timers.current = times.map((t, i) => setTimeout(() => setStage(i + 1), t));
+    setRunning(true);
+    timers.current = times.map((t, i) => setTimeout(() => {
+      setStage(i + 1);
+      if (i === times.length - 1) setRunning(false);
+    }, t));
   };
-  const reset = () => {
-    timers.current.forEach(clearTimeout);
-    setStage(0);
+  return { stage, run, running };
+}
+
+/**
+ * Sound on the site is the visitor's choice, and off until they make it.
+ * The Studio's sounds default to on, so the site reads the same stored
+ * choice but treats "never chosen" as off.
+ */
+export function initSound() {
+  try {
+    sound.enabled = localStorage.getItem('dolly.sound') === 'on';
+  } catch {
+    sound.enabled = false;
+  }
+}
+
+/** Whether sound is on, kept in step with every toggle on the page. */
+export function useSoundOn() {
+  const [on, setOn] = useState(sound.enabled);
+  useEffect(() => sound.on(setOn), []);
+  return on;
+}
+
+const THEME = 'dolly.theme';
+
+/** Night unless the visitor picked Light: the same choice, and key, as the Studio's. */
+export function storedTheme() {
+  try {
+    return localStorage.getItem(THEME) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+export function useTheme() {
+  const [theme, setTheme] = useState(storedTheme);
+  const choose = (next) => {
+    const root = document.documentElement;
+    /* Hold every transition for a frame, so the switch is one clean cut. */
+    root.classList.add('no-motion');
+    root.dataset.theme = next;
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-motion')));
+    try {
+      localStorage.setItem(THEME, next);
+    } catch {
+      /* A private window: the choice lasts until the tab closes. */
+    }
+    setTheme(next);
   };
-  return { stage, run, reset, running: stage > 0 && stage < times.length };
+  return [theme, choose];
 }

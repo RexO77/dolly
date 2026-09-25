@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Dolly app icon, light</title>
+  <desc id="desc">A playful crop frame and camera lens cast a warm beam toward a sparkle on a cream background.</desc>
+  <rect width="1024" height="1024" rx="218" fill="#F8F0E3"/>
+
+  <g id="spotlight-beam">
+    <path d="M637 403c19 23 47 29 75 16l-141 341c-16 39-73 57-127 45l-153-34c-26-6-36-38-18-57Z" fill="#EEA261" fill-opacity=".34"/>
+  </g>
+
+  <g id="crop-frame" fill="#292725">
+    <rect x="233" y="206" width="151" height="54" rx="27"/>
+    <rect x="233" y="206" width="54" height="151" rx="27"/>
+    <rect x="640" y="206" width="151" height="54" rx="27"/>
+    <rect x="737" y="206" width="54" height="151" rx="27"/>
+    <rect x="233" y="764" width="151" height="54" rx="27"/>
+    <rect x="233" y="667" width="54" height="151" rx="27"/>
+    <rect x="640" y="764" width="151" height="54" rx="27"/>
+    <rect x="737" y="667" width="54" height="151" rx="27"/>
+  </g>
+
+  <g id="lens">
+    <circle cx="674" cy="361" r="61" fill="#292725"/>
+    <circle cx="674" cy="361" r="37" fill="#F8F0E3"/>
+    <circle cx="674" cy="361" r="21" fill="#E99560"/>
+    <circle cx="667" cy="353" r="6" fill="#FFF4E5" fill-opacity=".7"/>
+  </g>
+
+  <path id="sparkle" d="M422 573c4 0 7 3 8 8l8 28c2 7 6 11 13 13l28 8c5 1 8 4 8 8s-3 7-8 8l-28 8c-7 2-11 6-13 13l-8 28c-1 5-4 8-8 8s-7-3-8-8l-8-28c-2-7-6-11-13-13l-28-8c-5-1-8-4-8-8s3-7 8-8l28-8c7-2 11-6 13-13l8-28c1-5 4-8 8-8Z" fill="#D97644"/>
+</svg>

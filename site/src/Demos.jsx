@@ -1,13 +1,21 @@
 /**
- * The small demos beside each idea. Each one is still until the visitor
- * presses its button, and each reads its numbers from the engine where it
- * can: the move is `cameraAt` over a real take's box, the wash is the
- * grammar's colour and strength.
+ * The small demos beside each idea about the camera. Each is still until
+ * the visitor presses its button, and each reads its numbers from the
+ * engine where it can: the move is `cameraAt` over a real frame of the take,
+ * the wash is the grammar's colour and strength, the card is `cardAt`.
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cameraAt, viewBox } from '../../engine/camera/math.mjs';
-import { WASH, WASH_ALPHA, SPOT_RADIUS, SPRING, ESTABLISH, LEAN_Z } from '../../engine/camera/grammar.mjs';
-import { media, useReducedMotion, useSequence } from './hooks.js';
+import { WASH, WASH_ALPHA, SPOT_RADIUS, SPRING, ESTABLISH } from '../../engine/camera/grammar.mjs';
+import { resolveFrame } from '../../engine/camera/card.mjs';
+import { drawShot } from './camera.js';
+import { media } from './hooks.js';
+import { Seg, Switch } from './parts.jsx';
+import { Player, clock, scrubLine, useClock } from './Player.jsx';
+import { Backdrops } from './Stage.jsx';
+
+/** How many of `times` (ms) have passed at `t` seconds: a sequence's stage, from a clock. */
+const stageAt = (times, t) => times.filter((ms) => ms <= t * 1000 + 1e-6).length;
 
 /* ─────────────────────────────────────────────────────────
  * NO CURSOR
@@ -22,6 +30,7 @@ import { media, useReducedMotion, useSequence } from './hooks.js';
  * ───────────────────────────────────────────────────────── */
 
 const HAND_TIMING = [450, 1050, 1750, 2250, 2400, 3600];
+const HAND_T = 3.9; // the take's length, seconds
 
 const ROWS = [
   { name: 'Weekly digest', sub: 'Mondays at 9:00', on: true },
@@ -38,8 +47,8 @@ function Arrow() {
 }
 
 export function NoCursorDemo() {
-  const reduced = useReducedMotion();
-  const { stage, run, running } = useSequence(HAND_TIMING, { reduced });
+  const c = useClock(HAND_T);
+  const stage = stageAt(HAND_TIMING, c.t);
   const [cursor, setCursor] = useState(false);
   const box = useRef(null);
   const sw = useRef(null);
@@ -67,31 +76,29 @@ export function NoCursorDemo() {
 
   return (
     <div className="demo">
-      <div className="mini" ref={box} aria-label="A settings card that changes on its own, with no cursor" role="img">
-        <div className="mini-head"><b>Notifications</b><span>Wrenly</span></div>
-        {ROWS.map((r, i) => (
-          <div key={r.name} className={`mini-row${i === 1 && rowHover ? ' is-hover' : ''}`}>
-            <span>{r.name}<small>{r.sub}</small></span>
-            <span ref={i === 1 ? sw : undefined} className={`mini-switch${r.on || (i === 1 && flipped) ? ' on' : ''}`} />
+      <Player clock={c} label="the take" readout={clock(c.t)} marks={HAND_TIMING.map((ms) => ms / 1000)}>
+        <div className="screen">
+          <div className="mini" ref={box} aria-label="A settings card that changes on its own, with no cursor" role="img">
+            <div className="mini-head"><b>Notifications</b><span>Wrenly</span></div>
+            {ROWS.map((r, i) => (
+              <div key={r.name} className={`mini-row${i === 1 && rowHover ? ' is-hover' : ''}`}>
+                <span>{r.name}<small>{r.sub}</small></span>
+                <span ref={i === 1 ? sw : undefined} className={`mini-switch${r.on || (i === 1 && flipped) ? ' on' : ''}`} />
+              </div>
+            ))}
+            <div className="mini-foot">
+              <span className={`mini-saved${saved ? ' on' : ''}`}>Saved</span>
+              <span ref={save} className={`mini-save${saveHover ? ' is-hover' : ''}${pressed ? ' is-press' : ''}`}>Save</span>
+            </div>
+            {cursor && (
+              <span className="fake-cursor" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}><Arrow /></span>
+            )}
           </div>
-        ))}
-        <div className="mini-foot">
-          <span className={`mini-saved${saved ? ' on' : ''}`}>Saved</span>
-          <span ref={save} className={`mini-save${saveHover ? ' is-hover' : ''}${pressed ? ' is-press' : ''}`}>Save</span>
         </div>
-        {cursor && (
-          <span className="fake-cursor" style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}><Arrow /></span>
-        )}
-      </div>
+      </Player>
       <div className="demo-foot">
-        <button type="button" className="chip-btn" onClick={run} disabled={running}>
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor" /></svg>
-          {running ? 'Playing' : 'Play the take'}
-        </button>
-        <button type="button" className="switch" role="switch" aria-checked={cursor} onClick={() => setCursor(!cursor)}>
-          <span className="knob" aria-hidden="true" />
-          Draw a cursor
-        </button>
+        <Switch on={cursor} onChange={setCursor}>Draw a cursor</Switch>
+        <span className="mono dim">{cursor ? 'your eye follows the arrow' : 'your eye follows the change'}</span>
       </div>
     </div>
   );
@@ -112,10 +119,9 @@ export function NoCursorDemo() {
 const HOLD = 1.4; // the demo's hold, seconds
 const END_HOLD = 0.6; // the wide hold after the pull back
 
-export function LeanDemo({ tour }) {
-  const reduced = useReducedMotion();
-  const focus = tour.boxes.issue;
-  const keys = [
+/** The demo lean's keyframes: one lean on `focus`, held, and pulled back. */
+export function leanKeys(focus) {
+  return [
     { t: 0, wide: true },
     { t: ESTABLISH, wide: true },
     { t: ESTABLISH + SPRING, focus },
@@ -123,63 +129,26 @@ export function LeanDemo({ tour }) {
     { t: ESTABLISH + SPRING * 2 + HOLD, wide: true },
     { t: ESTABLISH + SPRING * 2 + HOLD + END_HOLD, wide: true },
   ];
+}
+
+export function LeanDemo({ tour }) {
+  const keys = leanKeys(tour.boxes.issue);
   const T = keys[keys.length - 1].t;
-  const [t, setT] = useState(0);
-  const [running, setRunning] = useState(false);
-  const raf = useRef(0);
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
-
-  const roll = () => {
-    cancelAnimationFrame(raf.current);
-    if (reduced) {
-      setT(ESTABLISH + SPRING + HOLD / 2);
-      return;
-    }
-    const began = performance.now();
-    setRunning(true);
-    const tick = () => {
-      const now = Math.min(T, (performance.now() - began) / 1000);
-      setT(now);
-      if (now < T) raf.current = requestAnimationFrame(tick);
-      else setRunning(false);
-    };
-    raf.current = requestAnimationFrame(tick);
-  };
-
-  const view = cameraAt(keys, t);
+  const c = useClock(T, { still: ESTABLISH + SPRING + HOLD / 2 });
+  const view = cameraAt(keys, c.t);
   const v = viewBox(1600, 1000, 1600, 1000, view);
   const s = 1600 / v.vw;
   const transform = `scale(${s}) translate(${(-v.x0 / 1600) * 100}%, ${(-v.y0 / 1000) * 100}%)`;
-
-  const W = 240;
-  const pts = Array.from({ length: 121 }, (_, i) => {
-    const tt = (i / 120) * T;
-    return `${((tt / T) * W).toFixed(1)},${(40 - ((cameraAt(keys, tt)[2] - 1) / 0.4) * 34).toFixed(1)}`;
-  }).join(' ');
-  const px = (t / T) * W;
-  const py = 40 - ((view[2] - 1) / 0.4) * 34;
-
+  const level = (z) => (z - 1) / 0.4;
   return (
     <div className="demo">
-      <div className="shot-frame">
-        <img src={media('still.webp')} alt="Wrenly with an issue open, as the camera sees it" width="1440" height="900" style={{ transform }} />
-      </div>
-      <div className="curve" aria-hidden="true">
-        <svg viewBox={`0 0 ${W} 44`} preserveAspectRatio="none">
-          <line x1="0" x2={W} y1="40" y2="40" stroke="var(--line-2)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <polyline points={pts} fill="none" stroke="var(--ink-3)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-          <line x1={px} x2={px} y1="0" y2="44" stroke="var(--ink)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-          <circle cx={px} cy={py} r="3" fill="var(--ink)" />
-        </svg>
-        <span className="lbl">{view[2].toFixed(2)}×</span>
-      </div>
-      <div className="demo-foot">
-        <button type="button" className="chip-btn" onClick={roll} disabled={running}>
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor" /></svg>
-          {running ? 'Rolling' : 'Roll camera'}
-        </button>
-        <span className="mono" style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>{t.toFixed(2)}s / {T.toFixed(2)}s</span>
-      </div>
+      <Player clock={c} label="the lean" line={scrubLine((t) => level(cameraAt(keys, t)[2]), T)} level={level(view[2])} readout={<><b>{view[2].toFixed(2)}×</b> {clock(c.t)}</>}>
+        <div className="screen">
+          <div className="shot-frame">
+            <img src={media('still.webp')} alt="Wrenly with an issue open, as the camera sees it" width="1440" height="900" style={{ transform }} />
+          </div>
+        </div>
+      </Player>
     </div>
   );
 }
@@ -205,61 +174,81 @@ export function WashDemo({ tour }) {
   const looks = { wash: 'Wash', ring: 'Ring', none: 'Nothing' };
   return (
     <div className="demo">
-      <div className="shot-frame">
-        <img src={media('still.webp')} alt="Wrenly with an issue open" width="1440" height="900" />
-        <svg className="overlay" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
-          <path d={`M0 0H${W}V${H}H0z${hole}`} fillRule="evenodd" fill={`rgb(${WASH.join(' ')})`} opacity={look === 'wash' ? WASH_ALPHA : 0} />
-          <rect x={x - 8} y={y - 8} width={w + 16} height={h + 16} rx="14" fill="none" stroke="oklch(0.64 0.21 30)" strokeWidth="7" opacity={look === 'ring' ? 1 : 0} />
-        </svg>
+      <div className="screen">
+        <div className="shot-frame">
+          <img src={media('still.webp')} alt="Wrenly with an issue open" width="1440" height="900" />
+          <svg className="overlay" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+            <path d={`M0 0H${W}V${H}H0z${hole}`} fillRule="evenodd" fill={`rgb(${WASH.join(' ')})`} opacity={look === 'wash' ? WASH_ALPHA : 0} />
+            <rect x={x - 8} y={y - 8} width={w + 16} height={h + 16} rx="14" fill="none" stroke="oklch(0.64 0.21 30)" strokeWidth="7" opacity={look === 'ring' ? 1 : 0} />
+          </svg>
+        </div>
       </div>
       <div className="demo-foot">
-        <div className="seg" role="radiogroup" aria-label="How to point at the change">
-          {Object.entries(looks).map(([k, label]) => (
-            <button key={k} type="button" role="radio" aria-checked={look === k} onClick={() => setLook(k)}>{label}</button>
-          ))}
-        </div>
-        <span className="mono" style={{ color: 'var(--ink-3)', fontSize: 12.5 }}>{look === 'wash' ? `${Math.round(WASH_ALPHA * 100)}% · ${SPOT_RADIUS}px` : look === 'ring' ? 'no, thank you' : 'where do I look?'}</span>
+        <Seg label="How to point at the change" value={look} onChange={setLook} options={looks} />
+        <span className="mono dim">{look === 'wash' ? `${Math.round(WASH_ALPHA * 100)}% · ${SPOT_RADIUS}px corners` : look === 'ring' ? 'no, thank you' : 'where do I look?'}</span>
       </div>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────
- * THE STUDIO
+ * THE FRAME
  *
- * The tour's own storyboard, shot by shot, each with the frame the render
- * shows in the middle of it.
+ * The same lean, with the clip as a card on a background. While the camera
+ * is wide the card sits back at 88%; as it leans in the card grows to fill
+ * the clip, on the camera's own curve, and settles back as it pulls out.
+ * Drawn with cardAt, the geometry the renderer uses.
  * ───────────────────────────────────────────────────────── */
 
-const say = (what) => what.replace(/ list$/, ' the list').replace(/ issue$/, ' the issue');
+export function FrameDemo({ tour }) {
+  const canvas = useRef(null);
+  const image = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+  const [background, setBackground] = useState('dusk');
+  const [windowed, setWindowed] = useState(true);
+  const [push, setPush] = useState(true);
+  const keys = leanKeys(tour.boxes.issue);
+  const T = keys[keys.length - 1].t;
+  const c = useClock(T, { still: ESTABLISH + SPRING + HOLD / 2 });
+  const t = c.t;
+  const look = resolveFrame({ background, window: windowed, push });
 
-export function StudioDemo({ tour }) {
-  const board = tour.storyboard;
-  const first = board.find((s) => s.kind === 'hold' && s.z > 1 && s.what.includes('issue')) ?? board[0];
-  const [pick, setPick] = useState(first.n);
-  const shot = board.find((s) => s.n === pick);
-  const list = useRef(null);
-  /* Show the picked shot inside the list without scrolling the page. */
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      image.current = img;
+      setLoaded(true);
+    };
+    img.src = media('still.webp');
+  }, []);
+
   useLayoutEffect(() => {
-    const el = list.current?.querySelector('[aria-pressed="true"]');
-    if (!el) return;
-    const l = list.current;
-    if (el.offsetTop < l.scrollTop || el.offsetTop + el.offsetHeight > l.scrollTop + l.clientHeight) l.scrollTop = el.offsetTop - l.clientHeight / 2 + el.offsetHeight / 2;
-  }, [pick]);
+    const c = canvas.current;
+    const w = Math.min(1440, Math.round(c.clientWidth * devicePixelRatio));
+    const h = Math.round((w * 10) / 16);
+    if (c.width !== w || c.height !== h) {
+      c.width = w;
+      c.height = h;
+    }
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    if (!image.current) return;
+    drawShot(ctx, image.current, { SW: 1440, SH: 900, spec: { camera: keys, spots: [] }, look, t, OW: w, OH: h, css: 1 });
+  });
+
+  const z = cameraAt(keys, t)[2];
   return (
     <div className="demo">
-      <div className="board">
-        <div className="board-frame">
-          <img src={media(shot.file)} alt={`Shot ${shot.n}: ${say(shot.what)}`} width="480" height="300" />
+      <Player clock={c} label="the framed lean" line={scrubLine((tt) => (cameraAt(keys, tt)[2] - 1) / 0.4, T)} level={(z - 1) / 0.4} readout={<><b>{z.toFixed(2)}×</b> {clock(t)}</>}>
+        <div className="screen">
+          <canvas ref={canvas} className="frame-canvas" role="img" aria-label={`Wrenly as a card on the ${background} background${windowed ? ', in a browser window' : ''}`} data-loaded={loaded || undefined} />
         </div>
-        <div className="shots" ref={list} role="group" aria-label="The clip's shots">
-          {board.map((s) => (
-            <button key={s.n} type="button" aria-pressed={s.n === pick} onClick={() => setPick(s.n)}>
-              <span className="n">{String(s.n).padStart(2, '0')}</span>
-              <span>{say(s.what)}{s.kind === 'lean' ? `, ${LEAN_Z}×` : ''}</span>
-              <span className="d">{(s.t1 - s.t0).toFixed(2)}s</span>
-            </button>
-          ))}
+      </Player>
+      <div className="demo-foot wrap">
+        <Backdrops value={background} onChange={setBackground} />
+        <div className="demo-foot-row">
+          <Switch on={windowed} onChange={setWindowed}>Window</Switch>
+          <Switch on={push} onChange={setPush}>Grow to fill</Switch>
         </div>
       </div>
     </div>
@@ -269,7 +258,10 @@ export function StudioDemo({ tour }) {
 /* ─────────────────────────────────────────────────────────
  * AGENTS
  *
- *    0ms   press "Run it": the ask
+ * The whole exchange is on screen from the start, so it reads without a
+ * press. "Play it" replays it line by line:
+ *
+ *    0ms   the ask
  *  600ms   the agent adds the product
  * 1400ms   it inspects the page
  * 2100ms   it writes the scenario
@@ -278,9 +270,11 @@ export function StudioDemo({ tour }) {
  * 4400ms   it hands over the Studio
  * ───────────────────────────────────────────────────────── */
 
-const AGENT_TIMING = [600, 1000, 1400, 1800, 2100, 2800, 3700, 3900, 4400];
+const AGENT_TIMING = [300, 900, 1300, 1700, 2100, 2400, 3100, 4000, 4200, 4700];
+const AGENT_T = 5.2;
 
 const LINES = [
+  { who: 'you', ask: 'Make a Dolly clip of an issue being marked done in Wrenly.' },
   { who: 'agent', cmd: 'dolly init wrenly --from ~/code/wrenly' },
   { out: 'found: node serve.mjs on port 5190' },
   { who: 'agent', cmd: 'dolly inspect wrenly /' },
@@ -289,41 +283,24 @@ const LINES = [
   { who: 'agent', cmd: 'dolly record wrenly wrenly-done' },
   { out: 'recorded masters/wrenly/wrenly-done.mp4 (2880x1800, 9.63s)' },
   { out: 'directed cameras/wrenly-done.camera.json' },
-  { who: 'agent', cmd: 'Your turn: dolly storyboard wrenly wrenly-done', done: true },
+  { who: 'agent', cmd: 'Your turn: dolly studio wrenly wrenly-done', done: true },
 ];
 
 export function AgentDemo() {
-  const reduced = useReducedMotion();
-  const { stage, run, running } = useSequence(AGENT_TIMING, { reduced });
-  const [asked, setAsked] = useState(false);
-  const go = () => {
-    setAsked(true);
-    run();
-  };
+  const c = useClock(AGENT_T, { initial: AGENT_T });
+  const stage = stageAt(AGENT_TIMING, c.t);
   return (
     <div className="demo">
-      <div className="term" aria-live="polite">
-        {asked ? (
-          <>
-            <p className="you"><span className="who">you</span><span className="txt">Make a Dolly clip of an issue being marked done in Wrenly.</span></p>
-            {LINES.slice(0, stage).map((l, i) => (
-              <p key={i} className={l.out ? 'out' : l.done ? 'done' : ''}>
-                <span className="who">{l.who ?? ''}</span>
-                <span className="txt">{l.cmd ?? l.out}</span>
-              </p>
-            ))}
-            {running && <p><span className="who" /><span className="caret" /></p>}
-          </>
-        ) : (
-          <p className="out"><span className="who">you</span><span className="txt"><span className="caret" /></span></p>
-        )}
-      </div>
-      <div className="demo-foot">
-        <button type="button" className="chip-btn" onClick={go} disabled={running}>
-          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor" /></svg>
-          {running ? 'Working' : asked ? 'Run it again' : 'Ask the agent'}
-        </button>
-      </div>
+      <Player clock={c} label="the agent's session" readout={clock(c.t)} marks={AGENT_TIMING.map((ms) => ms / 1000)}>
+        <div className="term" aria-live={c.playing ? 'polite' : 'off'}>
+          {LINES.map((l, i) => (
+            <p key={i} className={[l.ask && 'you', l.out && 'out', l.done && 'done', i >= stage && 'later'].filter(Boolean).join(' ')}>
+              <span className="who">{l.who ?? ''}</span>
+              <span className="txt">{l.ask ?? l.cmd ?? l.out}</span>
+            </p>
+          ))}
+        </div>
+      </Player>
     </div>
   );
 }
