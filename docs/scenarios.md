@@ -1,6 +1,6 @@
 # Scenarios
 
-A scenario is one clip: a module in `projects/<project>/scenarios/<clip>.mjs`. The file name is the clip's name. It says what the hand does in the product, and where the camera should look.
+A scenario is one clip: a module in `projects/<project>/scenarios/<clip>.mjs`, named after the clip. It says what the hand does in the product, and where the camera should look. It is the only part of Dolly you write, and it is short.
 
 ```js
 export const meta = { url: '/', leadMs: 700, tailMs: 1400 };   // the page, and the still time either side
@@ -52,13 +52,13 @@ The camera's times in the storyboard come from the grammar: a lean starts `h.gra
 | `url` | `'/'` | the page, against the project's `base`. A hash route works: `'/#/browser'` |
 | `leadMs` | `700` | still time at the start of the take, before the scenario's first move |
 | `tailMs` | `1400` | still time after the scenario returns: the final wide hold |
-| `takes` | `1` | how many times to try a take before giving up (`dolly record --takes N` overrides it) |
+| `takes` | `1` | how many tries the clip gets in all before recording gives up (`dolly record --takes N` overrides it) |
 | `viewport` | the project's | `{width, height, dpr}` for this clip |
 | `query` | the project's | query parameters, merged over the project's; `false` drops the project's |
 | `poster` | the last frame | seconds into the clip to take the poster from |
 | `deliver` | `'default'` | which of the project's `deliver` folders the clip goes to |
 | `output` | the preset | overrides for the render: `width`, `size` (`'1600x1000'`), `crf`, `x264`, `poster: {width, quality}` |
-| `allowReload` | `false` | keep a take even when the page reloads during it |
+| `allowReload` | `false` | keep a take even when the page reloads or hot-updates during it |
 
 `meta` is handed to the project's `prepare` hook too, so a project can read its own keys from it (a product with several platforms might read `meta.platform`).
 
@@ -99,8 +99,8 @@ The default export is the take. It receives `h`, bound to the page and to the cl
 | `h.boxOf(target)` | a target's box in CSS px |
 | `h.center(target)` | a target's centre in CSS px |
 | `h.rect(target, pad?)` | a target's box as fractions of the viewport |
-| `h.click(target, {glide, dwell})` | glide to it (520ms), pause (200ms), click |
-| `h.clickButton(label, {timeout, glide, dwell})` | the same, for a button by its label |
+| `h.click(target, {glide, dwell, beat})` | glide to it (520ms), pause (200ms), click; `beat` marks the press |
+| `h.clickButton(label, {timeout, glide, dwell, beat})` | the same, for a button by its label |
 | `h.hover(target, glide?)` | glide onto it |
 | `h.drag(from, to, {ms, hold})` | press, drag and release, eased like a hand |
 | `h.moveTo(x, y, ms?)` | glide to a point on an even ease |
@@ -127,35 +127,32 @@ There is no cursor in a Dolly clip, so a hand shows only through what it lights 
 | `hand.glide(to, ms, {bend, curve})` | glide on an arc; `bend` is a control point, a signed bow as a share of the distance, or seeded |
 | `hand.dwell(ms)` | rest, drifting a pixel |
 | `hand.press()` | a press 62 to 105ms long |
-| `hand.clickAt(to, {glide, dwell, bend})` | glide, settle, press; returns the clip time of the press |
+| `hand.clickAt(to, {glide, dwell, bend, beat})` | glide, settle, press; returns the clip time of the press, and marks it as `beat` when given |
 | `hand.aim(rect, {dx, dy, jx, jy})` | where to aim inside a rect: near the middle, never dead centre |
 | `hand.rectOf(fn, ...args)` | the rect a page function returns, or a clear error |
 | `hand.type(text)` | bursty typing: quick in a word, a beat at spaces, longer at punctuation |
 | `hand.jump(to)` | get into position unseen, in one event |
 | `hand.pos`, `hand.rng` | where the hand is; its seeded random source |
 
-From a walk down a tree:
+Picking a row in a list, with the press marked as the beat the camera leans for:
 
 ```js
-const m = h.hand({ curve: h.ease.settle(0.75) });
-const glide = (x, y, ms, bend = 0) => m.glide({ x, y }, ms, { bend });
+const hand = h.hand({ seed: 4, curve: h.ease.settle(0.75) });
+const row = await h.boxOf('text=Invoices');
 
-await h.until(WIDE_HOLD + SPRING + SETTLE - 0.2);
-await glide(ds.x, ds.y, 560, -0.08);
-await h.sleep(140);
-await h.press();
-h.beat('data-science');
+await h.until(TIMING.reach);
+await hand.clickAt(hand.aim(row), { glide: 560, bend: -0.08, beat: 'open' });
+await h.box('details', '#details');
 ```
 
 A take driven by button labels:
 
 ```js
-await h.button('Review queue', 12000);
-h.beat('waiting');
-h.boxCss('foot', { x: 0, y: 540, w: 600, h: 260 });
+await h.button('Export', 12000);
+h.beat('ready');
+h.boxCss('toolbar', { x: 0, y: 0, w: 1440, h: 64 });
 await h.sleep(2200);
-h.beat('open');
-await h.clickButton('Open the review queue');
+await h.clickButton('Export as CSV', { beat: 'export' });
 await h.park();
 ```
 
@@ -165,10 +162,10 @@ await h.park();
 
 ```js
 export const direction = {
-  sync: { beat: 'waiting', box: 'foot' },
+  sync: { beat: 'open', box: 'details' },
   shots: [
-    { box: 'foot', from: 'waiting', to: 'waiting', hold: 1.2 },
-    { box: 'thread', from: 'open', to: 'ack', hold: 1.2 },
+    { box: 'toolbar', from: 'ready', to: 'ready', hold: 1.2 },
+    { box: 'details', from: 'open', to: 'done', hold: 1.2 },
   ],
 };
 ```
@@ -178,7 +175,7 @@ export const direction = {
 | `shots` | `[{box, from, to, hold = 0.9, spot = true}]`: lean in on `box` from beat `from` to beat `to`, plus `hold` seconds; `spot: false` leaves the wash off |
 | `sync` | `{beat, box, threshold = 1.5}`: re-time every beat by one real change, the first frame after `beat` where `box` changes |
 | `resync` | `[{beat, box, window = 2.5, threshold = 2}]`: pin single beats the same way, for a beat the scenario can only notice late |
-| `cut` | `{from, fromOffset, to, toOffset, fade = 0.25}`: take out the stretch between two beats (a spinner, a wait) with a crossfade; later beats move up |
+| `cut` | `{from, fromOffset, to, toOffset, fade = 0.25}`: take out the stretch between two beats (a spinner, a wait) with a crossfade; beats inside it land where the crossfade ends, and later beats move up |
 
 A beat marked on the scenario's clock can land a frame or two off what the master shows. `sync` and `resync` read the real frame off the picture, so the camera sits on what the viewer sees.
 
@@ -195,11 +192,13 @@ For a move the shots cannot express, export `camera(take, tools)` instead of `di
 | `tools.firstChange(box, {from, threshold})` | the first time at or after `from` where `box` changes on the picture; -1 when it never does |
 | `tools.firstPixel(point, test, {from})` | the first time the pixel at `point` passes `test(r, g, b)`; -1 when it never does |
 
-From `rec-walk`, a lean anchored top-left, held from a fixed time to a beat:
+A lean held from a fixed time until just after a beat:
 
 ```js
+const LEAN = { cx: 0.36, cy: 0.36, z: 1.385 };
+
 export function camera(take) {
-  const pull = +(take.beats.algorithms + AFTER).toFixed(2);
+  const pull = +(take.beats.saved + AFTER).toFixed(2);
   const end = +(pull + SPRING + TAIL_MS / 1000).toFixed(2);
   return {
     camera: [

@@ -44,7 +44,7 @@ A `transition` wins over `ease`. The view never shows past the frame's edge: a c
 
 ## Spots
 
-`spots` are the washes. A wash lays the page's warm ground at 72% over everything but its box, with corners rounded to 6 CSS px. It is never a ring.
+`spots` are the washes. A wash lays a fixed warm paper colour, rgb(245, 239, 230), at 72% over everything but its box, with corners rounded to 6 CSS px. It is never a ring.
 
 | Key | What it does |
 | --- | --- |
@@ -67,7 +67,7 @@ A `transition` wins over `ease`. The view never shows past the frame's edge: a c
 
 A render and a Studio Save refuse a spec with errors: a keyframe with no time, a focus that is not a rect, a zoom below 1, an unknown `ease` or `transition`, a spot with no `in`, a cut whose `from` is not before its `to`. They warn about a lean past 1.485 (1.1 times the lean: text softens and the product loses its context) and about a spot that asks for a ring (ignored).
 
-`dolly storyboard <project> <clip> --text` prints a spec as a shot list, with the take's beats on the same timeline. The Studio also flags a camera moving during a beat, a final hold under 0.8s, and a lean that upscales the master.
+`dolly studio <project> <clip> --text` prints a spec as a shot list, with the take's beats on the same timeline. The Studio also flags a camera moving during a beat, a final hold under 0.8s, and a lean that upscales the master.
 
 ## The grammar
 
