@@ -10,12 +10,14 @@
  * Dolly finds it the way ESLint finds its config: from the current folder
  * upwards, or from DOLLY_WORKSPACE, or from --workspace.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { homedir } from 'node:os';
+import { readJson } from './files.mjs';
 
 export const WORKSPACE_FILE = 'dolly.json';
 
+/** A path with a leading ~ expanded to the home folder, made absolute. */
 export const expand = (p) => (p ? resolve(p.replace(/^~(?=$|\/)/, homedir())) : p);
 
 /** The folder holding dolly.json at or above `from`, or null. */
@@ -26,16 +28,21 @@ export function findRoot(from = process.cwd()) {
   }
 }
 
-/** Load a workspace; throws with the way out when there is none. */
+/**
+ * Load a workspace: `workspace` (or DOLLY_WORKSPACE) when given, else the
+ * nearest dolly.json at or above `cwd`. Throws, with the way out, when there is none.
+ * @param {{workspace?: string, cwd?: string}} [options]
+ * @returns {{root: string, config: object, paths: {projects: string, masters: string, out: string, tmp: string}, rel: (path: string) => string}}
+ */
 export function loadWorkspace({ workspace, cwd = process.cwd() } = {}) {
   const explicit = expand(workspace ?? process.env.DOLLY_WORKSPACE);
   const root = explicit ?? findRoot(cwd);
   if (!root || !existsSync(join(root, WORKSPACE_FILE))) {
     throw new Error(explicit
-      ? `no ${WORKSPACE_FILE} in ${explicit}`
-      : `not inside a Dolly workspace (no ${WORKSPACE_FILE} here or above); run \`dolly init\` to make one, or pass --workspace`);
+      ? `${explicit} is not a Dolly workspace (it has no ${WORKSPACE_FILE}); \`dolly init\` there makes it one`
+      : `this folder is not in a Dolly workspace (there is no ${WORKSPACE_FILE} here or above); \`dolly init\` makes one, or pass --workspace DIR`);
   }
-  const config = JSON.parse(readFileSync(join(root, WORKSPACE_FILE), 'utf8'));
+  const config = readJson(join(root, WORKSPACE_FILE));
   const at = (key, fallback) => resolve(root, config[key] ?? fallback);
   return {
     root,

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Dolly records a real web product in headless-looking Chrome with no cursor, then directs a camera over the take (lean in, hold, pull back, a wash spotlight) and renders a web-ready clip. It is published as `@nischalskanda/dolly` (MIT, public), and the command is `dolly`.
+Dolly records a real web product in a real Chrome window parked off screen, with no cursor, then directs a camera over the take (lean in, hold, pull back, a wash spotlight) and renders a web-ready clip. It is published as `@nischalskanda/dolly` (MIT, public), and the command is `dolly`.
 
 `PLAN.md` holds the current plan, its workstreams and their acceptance checks. Tick a check there when it passes.
 

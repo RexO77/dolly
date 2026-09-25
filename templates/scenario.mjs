@@ -1,6 +1,6 @@
 /**
  * __CLIP__: one change, directed. Say here what the clip shows and why it
- * earns a clip, in a sentence a reader of the case study would recognise.
+ * earns a clip, in a sentence someone watching it would recognise.
  *
  * The hand reaches TARGET and presses it; PANEL is what changes. The camera
  * holds wide, leans in on PANEL and settles before the press, stays still
@@ -10,7 +10,7 @@
  * Set TARGET and PANEL from `dolly inspect __PROJECT__`, then:
  *
  *   dolly record __PROJECT__ __CLIP__
- *   dolly storyboard __PROJECT__ __CLIP__
+ *   dolly studio __PROJECT__ __CLIP__
  *
  * A scenario imports nothing: everything it needs arrives on `h`.
  */

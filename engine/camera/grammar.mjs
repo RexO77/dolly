@@ -10,19 +10,16 @@
  *   4. pull back: spring out to the wide view once it is done, and hold, so
  *      the finished state is seen in context.
  *
- * No cursor. A spotlight is the wash alone (the page's warm ground over
- * everything but the subject), never a drawn ring. It may ride a lean-in and
- * fade as the camera pulls back.
- *
- * These are the case study's judging figure's values, so a clip's camera and
- * the page's own figures move alike.
+ * No cursor. A spotlight is the wash alone (a fixed warm paper colour laid
+ * over everything but the subject), never a drawn ring. It may ride a
+ * lean-in and fade as the camera pulls back.
  */
 
-/** How far a lean goes in: the judging figure's zoom. Past it, text softens and the product loses its context. */
+/** How far a lean goes in. Past it, text softens and the product loses its context. */
 export const LEAN_Z = 1.35;
-/** A lean or a pull back, in seconds (the figure's guided walk). */
+/** A lean or a pull back, in seconds. */
 export const SPRING = 1.2;
-/** A quick hop between two nearby subjects (the figure's hover). */
+/** A quick hop between two nearby subjects, in seconds. */
 export const HOP = 0.6;
 /** How long a lean has come to rest before the change it leans in for. */
 export const SETTLE = 0.35;
@@ -41,7 +38,7 @@ export const SMOOTH_CURVE = [0.65, 0, 0.35, 1];
 /** A focus rect fills at most this share of the view, so its edges never touch the frame. */
 export const FOCUS_FILL = 0.92;
 
-/** The spotlight: the warm ground at 72% over everything but the subject. */
+/** The spotlight: a fixed warm paper colour, rgb(245, 239, 230), at 72% over everything but the subject. */
 export const WASH = [245, 239, 230];
 export const WASH_ALPHA = 0.72;
 /** The spotlight's corner radius, in CSS px. */

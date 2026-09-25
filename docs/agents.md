@@ -25,8 +25,8 @@ Product clips: use Dolly (`dolly help`). Follow <path to dolly>/skill/SKILL.md.
 3. Adds the product with `dolly init <name> --from <repo>`, and checks the port and start command it inferred.
 4. Runs `dolly inspect <project> <path>` for the controls and boxes it needs, and looks at the screenshot.
 5. Writes the scenario in the storyboard format ([scenarios.md](scenarios.md)).
-6. Runs `dolly record <project> <clip>` until the take passes, and `dolly storyboard <project> <clip> --text` to check that every beat lands while the camera holds.
-7. Hands you `dolly storyboard <project> <clip>`.
+6. Runs `dolly record <project> <clip>` until the take passes, and `dolly studio <project> <clip> --text` to check that every beat lands while the camera holds.
+7. Hands you `dolly studio <project> <clip>`.
 8. Renders and delivers when you ask, and replaces a delivered file only on your word.
 
 ## Prompts
@@ -34,7 +34,7 @@ Product clips: use Dolly (`dolly help`). Follow <path to dolly>/skill/SKILL.md.
 Copy one into your agent's session. Each names the outcome; the skill supplies the steps.
 
 **A first clip**
-> Record a clip of the settings page with Dolly: switch the theme to dark and let the change play. Add the product to my Dolly workspace if it is not there yet, then give me the storyboard command so I can direct it.
+> Record a clip of the settings page with Dolly: switch the theme to dark and let the change play. Add the product to my Dolly workspace if it is not there yet, then give me the Studio command so I can direct it.
 
 The agent adds the product, inspects the settings page, writes a scenario with one lean on the settings panel, records it, and hands you the Studio.
 
@@ -59,8 +59,8 @@ The agent measures a box for the row, points the shot at it, and runs `dolly dir
 The agent marks beats either side of the wait and adds a `cut` to the clip's `direction`.
 
 **A clip for every feature**
-> Make a Dolly clip for each feature on the pricing page, one change per clip, and list them with their storyboards so I can direct them one by one.
+> Make a Dolly clip for each feature on the pricing page, one change per clip, and list them with their Studio commands so I can direct them one by one.
 
 ## Working beside other sessions
 
-A take is rejected when the product reloads during it, and a hot update is a reload. When another agent is editing the product, record after its edits have landed, or retry with `dolly record <project> <clip> --takes 3`.
+A take is rejected when the product reloads or hot-updates during it. Dolly catches a full reload, and the hot updates Vite, Next.js and webpack announce in the page; others can slip through. So when another agent is editing the product, record after its edits have landed, or give each clip a few tries with `dolly record <project> <clip> --takes 3`.
