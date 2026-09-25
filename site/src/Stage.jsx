@@ -1,13 +1,12 @@
 /**
  * The hero: the real take of Wrenly, played through Dolly's camera live in
- * a canvas. The visitor can see the raw take, or direct it: roll the lens
- * to lean further or less, change the feel of the moves, turn the wash off,
- * or frame it as a card on a background. Every frame is the renderer's own
- * maths (camera.js), so what plays here is what would render.
+ * a canvas. The visitor sees the raw take or Dolly's direction of it, and
+ * can turn on the wash or frame it as a card on a background. Every frame
+ * is the renderer's own maths (camera.js), so what plays here is what would
+ * render.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Lens } from '../../studio/src/ui/Lens.jsx';
-import { direct, drawFrame, shotAt, FEELS, LEAN_Z, BACKDROPS } from './camera.js';
+import { direct, drawFrame, shotAt, BACKDROPS } from './camera.js';
 import { useReducedMotion, media } from './hooks.js';
 import { Cart, Seg, Switch } from './parts.jsx';
 import { PlayButton, useIdle } from './Player.jsx';
@@ -18,19 +17,6 @@ function words(seg, raw) {
   if (raw) return 'the raw take, as recorded';
   if (!seg) return '';
   return seg.what.replace('list', 'the list').replace('issue', 'the issue');
-}
-
-export function Curve({ feel }) {
-  const f = FEELS[feel].curve;
-  const pts = Array.from({ length: 25 }, (_, i) => {
-    const u = i / 24;
-    return `${(2 + u * 16).toFixed(2)},${(16 - f(u) * 12).toFixed(2)}`;
-  }).join(' ');
-  return (
-    <svg width="20" height="18" viewBox="0 0 20 18" aria-hidden="true">
-      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 }
 
 /** A background to frame the clip on, as a swatch of its own gradient. */
@@ -44,14 +30,11 @@ export function Backdrops({ value, onChange, label = 'Background' }) {
   return <Seg label={label} value={value} onChange={onChange} options={options} className="backdrops" />;
 }
 
-export function Stage({ tour, sharpMax }) {
+export function Stage({ tour }) {
   const reduced = useReducedMotion();
   const [mode, setMode] = useState('directed');
-  const [lean, setLean] = useState(LEAN_Z);
-  const [feel, setFeel] = useState('spring');
   const [wash, setWash] = useState(false); // off until the visitor asks: the lean carries the eye on its own
   const [framed, setFramed] = useState(false);
-  const [backdrop, setBackdrop] = useState('dusk');
   const [playing, setPlaying] = useState(null);
   const [ready, setReady] = useState(false);
   const [started, setStarted] = useState(false);
@@ -68,7 +51,7 @@ export function Stage({ tour, sharpMax }) {
   const visible = useRef(true);
   const scrubbing = useRef(false);
 
-  const direction = useMemo(() => direct(tour, { lean, feel, wash, frame: framed ? { background: backdrop, window: true } : null }), [tour, lean, feel, wash, framed, backdrop]);
+  const direction = useMemo(() => direct(tour, { wash, frame: framed ? { background: 'dusk', window: true } : null }), [tour, wash, framed]);
   const spec = mode === 'directed' ? direction.spec : null;
   const live = useRef({ spec, look: direction.look, segs: direction.segments });
   live.current = { spec, look: direction.look, segs: direction.segments };
@@ -217,17 +200,6 @@ export function Stage({ tour, sharpMax }) {
 
   const [idle, wake] = useIdle(Boolean(playing));
   const lit = direction.segments.filter((s) => s.kind !== 'hold' || s.z > 1.0001);
-  const soft = mode === 'directed' && lean > sharpMax + 1e-6;
-
-  let note = 'The camera leans in, holds still while the product changes, and pulls back. Roll the lens, or turn on the wash.';
-  if (mode === 'raw') note = 'What Dolly recorded: the whole screen, no cursor, no camera. Switch to Directed to see what the camera does with it.';
-  else if (soft) note = `Past ${sharpMax.toFixed(2)}× the take runs out of real pixels, so text goes soft. The Studio would tell you, and offer to cap it.`;
-  else if (lean <= 1.0005) note = wash ? 'Rolled all the way out: no lean, so the wash alone has to carry the eye.' : 'Rolled all the way out: no lean and no wash, so nothing points at the change. Try the wash.';
-  else if (feel === 'bouncy') note = 'A bouncy spring overshoots, then corrects. The grammar never does: the camera arrives once and stays.';
-  else if (framed) note = 'Framed: the clip sits on a background as a card, and grows to fill the screen as the camera leans in.';
-  else if (wash) note = 'The wash: a warm veil over everything but the change, so the eye goes straight to it.';
-  else if (Math.abs(lean - LEAN_Z) > 0.005) note = `Leaning to ${lean.toFixed(2)}×. Dolly's own is ${LEAN_Z}×, and the lens clicks into it.`;
-
   return (
     <div className="stage" role="region" aria-label="A live clip of a demo product, directed by Dolly">
       <div className="stage-bar">
@@ -283,35 +255,12 @@ export function Stage({ tour, sharpMax }) {
       </div>
 
       <div className="controls">
-        <div className="control mode">
-          <Seg label="What you see" value={mode} onChange={setMode} options={{ raw: 'Raw take', directed: 'Directed by Dolly' }} className="mode" />
-        </div>
-        <div className="control lean">
-          <span className="control-label" id="lean-label">Lean</span>
-          <Lens value={lean} onChange={(z) => directing(setLean)(z)} max={2} sharpMax={sharpMax} width={208} label="How far the camera leans in" />
-        </div>
-        <div className="control feel-control">
-          <span className="control-label">Move</span>
-          <Seg
-            label="How the camera moves"
-            value={feel}
-            onChange={directing(setFeel)}
-            className="feel"
-            options={Object.fromEntries(Object.entries(FEELS).map(([k, f]) => [k, <><Curve feel={k} />{f.label}</>]))}
-          />
-        </div>
-        <div className="control toggles">
+        <Seg label="What you see" value={mode} onChange={setMode} options={{ raw: 'Raw take', directed: 'Directed by Dolly' }} className="mode" />
+        <div className="toggles">
           <Switch on={wash} onChange={directing(setWash)}>Wash</Switch>
           <Switch on={framed} onChange={directing(setFramed)}>Frame it</Switch>
         </div>
-        {framed && (
-          <div className="control frame-control">
-            <span className="control-label">On</span>
-            <Backdrops value={backdrop} onChange={directing(setBackdrop)} />
-          </div>
-        )}
       </div>
-      <p className={`note${soft ? ' warn' : ''}`} aria-live="polite">{note}</p>
     </div>
   );
 }

@@ -132,16 +132,26 @@ code { font-size: 0.88em; }
 .top-inner { display: flex; align-items: center; gap: 24px; height: var(--header); }
 .mark { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 560; font-size: 16px; letter-spacing: var(--track-head); text-decoration: none; }
 .mark-img { width: 28px; height: 28px; }
-.top nav { display: flex; gap: 2px; margin-inline-end: auto; }
+.top nav { display: flex; gap: 2px; margin-inline: auto 6px; }
 .top nav a { display: inline-flex; align-items: center; height: 34px; padding: 0 11px; border-radius: var(--radius); color: var(--text-2); font-size: 13.5px; font-weight: 500; text-decoration: none; transition: color 150ms ease-out, background-color 150ms ease-out; }
 @media (hover: hover) and (pointer: fine) { .top nav a:hover { color: var(--text-1); background: var(--fill); } }
 .top-tools { display: flex; align-items: center; gap: 6px; }
 
 /* ── Hero ───────────────────────────────────────────────── */
 
-.hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px 56px; align-items: end; padding: 80px 0 44px; }
-.hero h1 { font-size: clamp(38px, 5.2vw, 64px); line-height: 1; letter-spacing: -0.045em; }
-.lede { max-width: 44ch; color: var(--text-2); font-size: 16px; }
+.hero { display: grid; justify-items: center; gap: 20px; padding: 96px 0 56px; text-align: center; }
+.hero h1 { font-size: clamp(38px, 5.6vw, 68px); line-height: 1; letter-spacing: -0.045em; }
+.lede { max-width: 50ch; color: var(--text-2); font-size: 16.5px; }
+/* The install command, as a chip you can copy. */
+.chip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 42px; margin-top: 8px; padding: 0 4px 0 16px; border-radius: 999px; background: var(--fill); }
+.chip code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); font-size: 13px; }
+.chip .p { color: var(--text-4); user-select: none; }
+.chip .copy { position: relative; top: auto; right: auto; flex: none; border-radius: 999px; }
+.btn-small { height: 34px; padding: 0 14px; font-size: 13.5px; }
+.section-title { margin-bottom: 36px; font-size: clamp(26px, 2.9vw, 34px); line-height: 1.1; letter-spacing: -0.035em; text-align: center; }
+.agents { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 24px 56px; align-items: center; }
+.agents .section-title { margin-bottom: 12px; text-align: start; }
+.agents .intro { max-width: 40ch; color: var(--text-2); font-size: 15.5px; }
 .cta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 22px; margin-top: 24px; }
 
 /* ── The stage: the live clip ───────────────────────────── */
@@ -208,7 +218,8 @@ code { font-size: 0.88em; }
 .cart { position: absolute; top: 9px; left: 0; width: 22px; height: 20px; margin-left: -11px; pointer-events: none; will-change: transform; }
 .cart svg { width: 22px; height: 20px; color: var(--text-1); }
 
-.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; margin-top: 8px; padding: 12px 16px; border-radius: var(--r-in); background: var(--tile); }
+.controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 28px; margin-top: 8px; padding: 10px 12px 10px 10px; border-radius: var(--r-in); background: var(--tile); }
+.toggles { display: flex; align-items: center; gap: 20px; }
 .control { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .control-label { flex: none; color: var(--text-3); font-size: 13px; }
 .control.lean .lens-readout { font-size: 11px; }
@@ -246,7 +257,7 @@ code { font-size: 0.88em; }
 
 /* ── Sections ───────────────────────────────────────────── */
 
-.block { padding-top: 136px; }
+.block { padding-top: 176px; }
 .head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px 56px; align-items: end; margin-bottom: 40px; }
 .kicker { margin-bottom: 12px; font-family: var(--mono); font-size: 12px; color: var(--text-3); letter-spacing: 0; }
 .head h2 { max-width: 24ch; font-size: clamp(26px, 2.9vw, 34px); line-height: 1.1; letter-spacing: -0.035em; }
@@ -264,7 +275,7 @@ code { font-size: 0.88em; }
 .step figcaption { margin: 10px 10px 0; font-size: 11.5px; color: var(--text-3); }
 .step h3 { display: flex; align-items: baseline; gap: 8px; margin: 18px 10px 0; font-size: 17px; font-weight: 560; letter-spacing: -0.02em; }
 .step h3 span { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--text-3); }
-.step p { margin: 6px 10px 0; color: var(--text-2); font-size: 14.5px; }
+.step p { margin: 8px 10px 0; color: var(--text-2); font-size: 15px; line-height: 1.6; }
 
 /* Rows: the words top-aligned on the left, the demo on the right, on one grid everywhere. */
 .rows { display: grid; gap: 112px; }
@@ -416,7 +427,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
 
 /* ── Get started ────────────────────────────────────────── */
 
-.start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: stretch; }
 .card { min-width: 0; padding: 6px; border-radius: var(--r-well); background: var(--well); }
 .card > h3 { padding: 12px 10px 12px; font-size: 15px; font-weight: 560; letter-spacing: -0.015em; }
 .card .seg { margin: 0 0 6px; }
@@ -467,13 +478,13 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
 
 /* ── The end ────────────────────────────────────────────── */
 
-.end { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 40px 56px; align-items: end; padding-top: 152px; }
+.end { display: grid; justify-items: center; gap: 28px; padding-top: 176px; text-align: center; }
 .end-cmd { min-width: 0; padding: 6px; border-radius: var(--r-well); background: var(--well); }
 .end-cmd p { padding: 12px 10px 6px; font-size: 13px; }
-.end .last { max-width: 24ch; font-size: clamp(26px, 3vw, 36px); line-height: 1.15; font-weight: 500; letter-spacing: -0.035em; }
+.end .last { max-width: 32ch; font-size: clamp(26px, 3vw, 36px); line-height: 1.15; font-weight: 500; letter-spacing: -0.035em; }
 .end .cta { margin-top: 28px; }
 /* The reel: the take's shots rolling along the track above the footer, forever, at one slow speed. */
-.reel { position: relative; margin-top: 112px; padding-top: 14px; pointer-events: none; user-select: none; }
+.reel { position: relative; margin-top: 176px; padding-top: 14px; pointer-events: none; user-select: none; }
 .reel-gate { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
 .reel-film { display: flex; width: max-content; animation: reel 72s linear infinite; will-change: transform; }
 .reel-copy {
@@ -507,13 +518,13 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
   .ref { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {
-  .top nav { display: none; }
-  .top-tools { margin-inline-start: auto; }
-  .hero { grid-template-columns: minmax(0, 1fr); padding: 48px 0 32px; }
+  .hero { padding: 56px 0 36px; }
+  .agents { grid-template-columns: minmax(0, 1fr); }
   .head { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 28px; }
   .steps { grid-template-columns: minmax(0, 1fr); }
   .start, .end { grid-template-columns: minmax(0, 1fr); }
-  .block { padding-top: 104px; }
+  .block { padding-top: 112px; }
+  .end { padding-top: 112px; }
   .editor-figure, .rest { margin-block: 0 88px; }
   .rest { margin: 88px 0 0; }
 }
@@ -523,7 +534,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
   .controls { gap: 8px; padding: 10px 12px; }
   .control { width: 100%; justify-content: space-between; }
   .control.toggles { justify-content: flex-start; }
-  .controls .seg.mode { flex: 1; }
+  .controls .seg.mode { width: 100%; flex-wrap: nowrap; }
   .controls .seg.mode button { flex: 1; justify-content: center; }
   .seg.feel svg { display: none; }
   .readout .shot, .pb-read .total { display: none; }

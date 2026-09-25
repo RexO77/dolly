@@ -6,10 +6,11 @@ import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import '../../studio/src/styles/tokens.css';
 import './styles.css';
-import { initSound } from './hooks.js';
+import { sound } from '../../studio/src/ui/sound.js';
 import { App } from './App.jsx';
 
-initSound();
+/* The landing page is silent: the Studio's sounds live in the Studio and its docs. */
+sound.enabled = false;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
