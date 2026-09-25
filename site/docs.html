@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#131215">
+  <title>Dolly docs</title>
+  <!--docs-meta-->
+  <link rel="icon" href="/icon-dark.svg" type="image/svg+xml">
+  <link rel="icon" href="/icon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="/icon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <style>html { background: #131215; } html[data-theme="light"] { background: #f5f5f2; }</style>
+  <script>
+    /* Night unless the visitor picked Light, set before the first paint so a reload never flashes. */
+    try { if (localStorage.getItem('dolly.theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+  </script>
+</head>
+<body class="docs-page">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top docs-top">
+    <div class="top-inner">
+      <button type="button" class="icon-btn menu-btn" data-menu aria-expanded="false" aria-controls="docs-nav" aria-label="Menu">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/></svg>
+      </button>
+      <a class="mark" href="%BASE_URL%" aria-label="Dolly, home">
+        <img class="mark-img mark-dark" src="/icon-dark.svg" alt="" width="28" height="28">
+        <img class="mark-img mark-light" src="/icon-light.svg" alt="" width="28" height="28">
+        Dolly
+      </a>
+      <a class="crumb" href="%BASE_URL%docs/">Docs</a>
+      <button type="button" class="search-btn" data-search aria-label="Search the docs">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+        <span>Search</span>
+        <kbd class="mod-k">⌘K</kbd>
+      </button>
+      <div class="top-tools">
+        <button type="button" class="icon-btn" data-theme-toggle aria-pressed="false" aria-label="Switch the theme" title="Switch the theme">
+          <svg class="moon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><path d="M13.25 9.6A5.5 5.5 0 0 1 6.4 2.75a5.5 5.5 0 1 0 6.85 6.85Z"/></svg>
+          <svg class="sun" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M3.6 12.4l1.05-1.05M11.35 4.65l1.05-1.05"/></svg>
+        </button>
+        <a class="icon-btn" href="https://github.com/RexO77/dolly" aria-label="Dolly on GitHub" title="GitHub">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .2a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.93-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.8.06 1.23.83 1.23.83.72 1.23 1.88.87 2.34.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.83-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.52.56.83 1.28.83 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 .2Z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="docs-shell">
+    <nav class="side" id="docs-nav" aria-label="Docs"><!--docs-sidebar--></nav>
+    <main class="doc" id="main"><!--docs-main--></main>
+    <aside class="toc" aria-label="On this page"><!--docs-toc--></aside>
+  </div>
+
+  <footer class="foot docs-foot">
+    <span>Made by Nischal Skanda. MIT license.</span>
+    <nav aria-label="Elsewhere">
+      <a href="%BASE_URL%">Home</a>
+      <a href="https://github.com/RexO77/dolly">GitHub</a>
+      <a href="https://www.npmjs.com/package/@nischalskanda/dolly">npm</a>
+    </nav>
+  </footer>
+  <div id="search-root"></div>
+  <script type="module" src="/src/docs/main.jsx"></script>
+</body>
+</html>

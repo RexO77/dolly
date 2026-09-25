@@ -234,7 +234,7 @@ export function NotesDemo({ tour, sharpMax }) {
           <text className="chart-axis" x={L - 8} y={y(1) + 4} textAnchor="end">1×</text>
           <text className="chart-axis" x={L - 8} y={y(LEAN_Z) + 4} textAnchor="end">{LEAN_Z}</text>
           <text className="chart-axis limit" x={L - 8} y={y(sharpMax) + 4} textAnchor="end">{sharpMax.toFixed(2)}</text>
-          <text className="chart-axis limit" x={W - R} y={y(sharpMax) - 6} textAnchor="end">sharp up to here</text>
+          <text className="chart-axis limit" x={L + 6} y={y(sharpMax) - 6}>sharp up to here</text>
           {[6, 8, 10, 12].map((t) => <text key={t} className="chart-axis" x={x(t)} y={H - 8} textAnchor="middle">{t}s</text>)}
           <polyline className="chart-curve" points={pts} />
           <polyline className="chart-curve bad" points={pts} clipPath="url(#notes-soft)" />
