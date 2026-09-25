@@ -43,6 +43,31 @@ export const WASH = [245, 239, 230];
 export const WASH_ALPHA = 0.72;
 /** The spotlight's corner radius, in CSS px. */
 export const SPOT_RADIUS = 6;
+/** Master pixels per delivered pixel below which a lean is called soft: a 2% enlargement does not show, more than that blurs text. */
+export const SOFT_BELOW = 0.98;
+
+/*
+ * The stage: the finished frame as a card turned in 3D over a background.
+ * Off unless a spec has a `stage`. Lengths are output pixels at 1920 wide
+ * and scale with the output.
+ */
+/** How much of the frame the card fills when it is not tilted: room for the background to show. */
+export const STAGE_INSET = 0.84;
+/** The viewer's distance from the card, as in CSS perspective: smaller is a stronger perspective. */
+export const STAGE_PERSPECTIVE = 2200;
+/** The card's corner radius. */
+export const STAGE_RADIUS = 18;
+/** The card's shadow: how dark, how soft, and how far below it falls. */
+export const STAGE_SHADOW = { strength: 0.32, blur: 48, drop: 28 };
+/** A tilt that reads as a product shot without hiding the product: pitch back, turn left, a touch of roll. */
+export const HERO_TILT = { x: 14, y: -18, z: 3 };
+/** Backgrounds by name: a gradient from `from` (top left) to `to` (bottom right), and a soft vignette. */
+export const BACKGROUNDS = {
+  paper: { from: [248, 247, 243], to: [229, 228, 222], vignette: 0.08 },
+  ink: { from: [38, 37, 43], to: [15, 14, 18], vignette: 0.25 },
+  wash: { from: [248, 240, 228], to: [230, 215, 194], vignette: 0.1 },
+  dusk: { from: [58, 52, 70], to: [18, 17, 24], vignette: 0.3 },
+};
 
 const r3 = (n) => Math.round(n * 1000) / 1000;
 
