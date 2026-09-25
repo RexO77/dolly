@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { clipUrl } from './config.mjs';
 import { openBrowser, fitWindow } from './browser.mjs';
-import { sleep } from './input.mjs';
+import { sleep } from './motion.mjs';
 
 export async function loadStills(project) {
   const file = join(project.dir, 'stills.mjs');

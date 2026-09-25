@@ -5,7 +5,7 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync, openSync } from 'node:fs';
 import { join } from 'node:path';
-import { sleep } from './input.mjs';
+import { sleep } from './motion.mjs';
 
 export async function isUp(base) {
   try {

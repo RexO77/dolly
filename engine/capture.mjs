@@ -11,7 +11,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ffmpeg } from './ffmpeg.mjs';
-import { sleep } from './input.mjs';
+import { sleep } from './motion.mjs';
 
 /**
  * Start the screencast into `dir`. Resolves once the first frame has

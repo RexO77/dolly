@@ -14,7 +14,8 @@ import { join } from 'node:path';
 import { clipUrl, presets } from './config.mjs';
 import { openBrowser, fitWindow } from './browser.mjs';
 import { startCapture, stitch } from './capture.mjs';
-import { helpers, sleep } from './input.mjs';
+import { helpers } from './input.mjs';
+import { sleep } from './motion.mjs';
 import { probe } from './ffmpeg.mjs';
 
 /** Keep the master and take a new recording replaces: masters are never deleted. */

@@ -14,7 +14,7 @@ import { chromium } from 'playwright-core';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { sleep } from './input.mjs';
+import { sleep } from './motion.mjs';
 
 /** The installed Google Chrome (Dolly never downloads a browser), or DOLLY_CHROME. */
 export const launchOptions = () => (process.env.DOLLY_CHROME ? { executablePath: process.env.DOLLY_CHROME } : { channel: 'chrome' });
