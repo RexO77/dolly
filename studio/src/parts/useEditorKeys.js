@@ -6,6 +6,7 @@
  * arrows, stay with it.
  */
 import { useEffect, useRef } from 'react';
+import { sound } from '../ui/sound.js';
 
 export function useEditorKeys(state) {
   const latest = useRef(state);
@@ -18,8 +19,13 @@ export function useEditorKeys(state) {
       const cmd = e.metaKey || e.ctrlKey;
       if (cmd && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        if (e.shiftKey) clip.redo();
-        else clip.undo();
+        if (e.shiftKey) {
+          clip.redo();
+          sound.redo();
+        } else {
+          clip.undo();
+          sound.undo();
+        }
       } else if (cmd && e.key === 's') {
         e.preventDefault();
         save();
@@ -27,6 +33,8 @@ export function useEditorKeys(state) {
         /* Leave every other shortcut to the browser. */
       } else if (e.key === ' ' && !e.target.closest('button')) {
         e.preventDefault();
+        if (transport.playing) sound.pause();
+        else sound.play();
         transport.toggle();
       } else if (e.key === ',' || e.key === '.') {
         transport.step((e.key === ',' ? -1 : 1) * (e.shiftKey ? 10 : 1));

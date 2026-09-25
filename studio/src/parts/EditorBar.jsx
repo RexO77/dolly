@@ -8,6 +8,8 @@ import { useVersion, cx, mod } from '../hooks.js';
 import { Button } from '../ui/controls.jsx';
 import { Icon } from '../ui/Icon.jsx';
 import { RenderButton } from '../ui/RenderButton.jsx';
+import { sound } from '../ui/sound.js';
+import { SoundToggle } from '../ui/SoundToggle.jsx';
 
 function Steps({ rendered }) {
   const state = { film: 'done', direct: 'here', render: rendered ? 'done' : 'todo' };
@@ -36,10 +38,12 @@ export function EditorBar({ library, name, clip, status, onHome, onSave, onRende
   const saved = status ?? (dirty ? 'Unsaved changes' : clip?.info.hasCamera ? 'Saved' : 'Not saved yet');
   const undo = () => {
     clip.undo();
+    sound.undo();
     onStatus(null);
   };
   const redo = () => {
     clip.redo();
+    sound.redo();
     onStatus(null);
   };
 
@@ -57,6 +61,7 @@ export function EditorBar({ library, name, clip, status, onHome, onSave, onRende
         {clip && (
           <>
             <span className={cx('bar-status', dirty && !status && 'dirty')} aria-live="polite">{saved}</span>
+            <SoundToggle />
             <Button variant="quiet" icon="undo" aria-label={`Undo (${mod}Z)`} title={`Undo (${mod}Z)`} disabled={!clip.canUndo} onClick={undo} />
             <Button variant="quiet" icon="redo" aria-label={`Redo (${mod}Shift+Z)`} title={`Redo (${mod}Shift+Z)`} disabled={!clip.canRedo} onClick={redo} />
             <Button onClick={onSave} disabled={!dirty} title={`Write the shots to the clip’s camera file (${mod}S)`}>Save</Button>

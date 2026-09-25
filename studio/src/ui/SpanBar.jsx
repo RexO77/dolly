@@ -5,6 +5,7 @@
  */
 import { useRef, useState } from 'react';
 import { cx } from '../hooks.js';
+import { sound } from './sound.js';
 
 const SNAP_PX = 6;
 
@@ -12,6 +13,13 @@ export function SpanBar({ length, t0, t1, beats = [], snaps = [], onStart, onEnd
   const svg = useRef(null);
   const drag = useRef(null);
   const [snapped, setSnapped] = useState(null);
+  const lastSnap = useRef(null);
+  /* A snap sounds once, as the edge lands on a beat, not on every move while it sits there. */
+  const snapTo = (hit) => {
+    if (hit && lastSnap.current?.t !== hit.t) sound.snap();
+    lastSnap.current = hit;
+    setSnapped(hit);
+  };
   const h = 28;
   const pad = 6;
   const x = (t) => pad + (t / length) * (width - pad * 2);
@@ -40,22 +48,22 @@ export function SpanBar({ length, t0, t1, beats = [], snaps = [], onStart, onEnd
     const now = toT(e.clientX);
     if (d.which === 'start') {
       const s = snap(now, e.shiftKey);
-      setSnapped(s.hit);
+      snapTo(s.hit);
       onStart(s.t, true);
     } else if (d.which === 'end') {
       const s = snap(now, e.shiftKey);
-      setSnapped(s.hit);
+      snapTo(s.hit);
       onEnd(s.t, true);
     } else {
       const s = snap(d.t1 + (now - d.t), e.shiftKey);
-      setSnapped(s.hit);
+      snapTo(s.hit);
       onShift(s.t - d.t1, true);
     }
   };
   const end = () => {
     if (drag.current) onSettle?.();
     drag.current = null;
-    setSnapped(null);
+    snapTo(null);
   };
 
   return (

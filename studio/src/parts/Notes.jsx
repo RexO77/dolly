@@ -1,10 +1,12 @@
 /** Notes that need the person, each with its one-click fix beside it where the fix is clear. */
 import { fmt } from '../hooks.js';
 import { Button } from '../ui/controls.jsx';
+import { sound } from '../ui/sound.js';
 
 export function Notes({ clip, notes, shotId, onSay }) {
   const apply = (fix) => {
     fix.apply();
+    sound.fix();
     const now = shotId && clip.shotById(shotId);
     onSay?.(now ? `${fix.label}: this shot now runs ${fmt(now.t0)} to ${fmt(now.t1)}s` : `Done: ${fix.label.toLowerCase()}`);
   };

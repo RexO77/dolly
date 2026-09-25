@@ -9,6 +9,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useVersion, useTime, cx, fmt } from '../hooks.js';
 import { CHANGING, beatWords, shotTitle } from '../model/clip.js';
+import { sound } from '../ui/sound.js';
 
 const H = 96;
 const RULER = 18;
@@ -26,6 +27,13 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
   const [W, setW] = useState(800);
   const [hover, setHover] = useState(null);
   const [snapped, setSnapped] = useState(null);
+  const lastSnap = useRef(null);
+  /* A snap sounds once, as the edge lands on a beat, not on every move while it sits there. */
+  const snapTo = (hit) => {
+    if (hit && lastSnap.current?.t !== hit.t) sound.snap();
+    lastSnap.current = hit;
+    setSnapped(hit);
+  };
   useVersion(clip);
   const t = useTime(transport);
   useLayoutEffect(() => {
@@ -61,6 +69,7 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
       drag.current = { kind: 'edge', id: Number(e.target.dataset.id) };
     } else if (role === 'cell') {
       const shot = shots[Number(e.target.dataset.n)];
+      sound.select();
       onSelect(shot.id);
       drag.current = { kind: 'cell', startX: e.clientX, shot };
     } else {
@@ -79,20 +88,20 @@ export function Strip({ clip, transport, selectedId, onSelect }) {
     if (d.kind === 'scrub') return transport.seek(toT(e.clientX));
     if (d.kind === 'edge') {
       const s = snap(toT(e.clientX), e.shiftKey);
-      setSnapped(s.hit);
+      snapTo(s.hit);
       clip.setKeyTime(d.id, s.t, { live: true });
     }
     if (d.kind === 'cell' && Math.abs(e.clientX - d.startX) > 3 && d.shot.kind !== 'hold') {
       d.moved = true;
       const s = snap(d.shot.t1 + (toT(e.clientX) - toT(d.startX)), e.shiftKey);
-      setSnapped(s.hit);
+      snapTo(s.hit);
       clip.shiftShot(d.shot, s.t - clip.shotById(d.shot.id).t1, { live: true });
     }
   };
   const up = () => {
     const d = drag.current;
     drag.current = null;
-    setSnapped(null);
+    snapTo(null);
     if (!d) return;
     if (d.kind === 'edge' || d.moved) clip.settle();
     else if (d.kind === 'cell') {

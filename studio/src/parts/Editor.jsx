@@ -13,6 +13,7 @@ import { Strip } from './Strip.jsx';
 import { TransportBar } from './TransportBar.jsx';
 import { ShotList } from './ShotList.jsx';
 import { useEditorKeys } from './useEditorKeys.js';
+import { sound } from '../ui/sound.js';
 
 /** An open shot plays on a loop, with this much breathing room either side, so a change to it is seen at once. */
 const LOOP_BEFORE = 0.6;
@@ -97,9 +98,11 @@ function Director({ library, clip, onHome }) {
     setStatus(null);
     try {
       await clip.save();
+      sound.latch();
       await library.refresh();
       setStatus('Saved');
     } catch (e) {
+      sound.error();
       setStatus(`Not saved: ${e.message}`);
     }
   };
@@ -107,11 +110,13 @@ function Director({ library, clip, onHome }) {
     setStatus(null);
     try {
       const r = await clip.render();
+      sound.done();
       await library.refresh();
       setMode('render');
       setStatus(`Rendered to ${r.out}`);
       return true;
     } catch (e) {
+      sound.error();
       setStatus(`The render stopped: ${e.message}`);
       return false;
     }

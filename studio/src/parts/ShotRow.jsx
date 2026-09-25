@@ -13,6 +13,7 @@ import { SpanBar } from '../ui/SpanBar.jsx';
 import { Curve } from '../ui/Curve.jsx';
 import { Icon } from '../ui/Icon.jsx';
 import { Notes } from './Notes.jsx';
+import { sound } from '../ui/sound.js';
 
 export const reveal = { initial: { height: 0, opacity: 0 }, animate: { height: 'auto', opacity: 1 }, exit: { height: 0, opacity: 0 }, transition: { duration: 0.22, ease: [0.23, 1, 0.32, 1] } };
 
@@ -50,7 +51,7 @@ export function ShotRow({ clip, shot, thumb, current, open, notes, onToggle, onF
 
   return (
     <li ref={row} className={cx('shot', current && 'current', open && 'open', notes.length && 'noted')}>
-      <button type="button" className="shot-summary" onClick={onToggle} aria-expanded={open}>
+      <button type="button" className="shot-summary" onClick={() => { sound.select(); onToggle(); }} aria-expanded={open}>
         <span className="shot-n">{String(shot.n + 1).padStart(2, '0')}</span>
         <span className="shot-thumb">{thumb ? <img src={thumb} alt="" /> : null}</span>
         <span className="shot-text">

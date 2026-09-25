@@ -7,6 +7,7 @@ import { useId, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { cx } from '../hooks.js';
 import { Icon } from './Icon.jsx';
+import { sound } from './sound.js';
 
 export function Button({ variant = 'default', size = 'm', icon, children, className, ...props }) {
   return (
@@ -25,7 +26,10 @@ export function Segmented({ options, value, onChange, label, size = 'm' }) {
       {options.map((o) => {
         const on = o.value === value;
         return (
-          <button key={o.value} type="button" role="radio" aria-checked={on} className={cx('seg-item', on && 'on')} onClick={() => onChange(o.value)} title={o.title}>
+          <button key={o.value} type="button" role="radio" aria-checked={on} className={cx('seg-item', on && 'on')} onClick={() => {
+            if (!on) sound.select();
+            onChange(o.value);
+          }} title={o.title}>
             {on && <motion.span layoutId={`seg-${id}`} className="seg-pill" transition={{ type: 'spring', duration: 0.3, bounce: 0 }} />}
             <span className="seg-label">{o.icon ? <Icon name={o.icon} /> : null}{o.label}</span>
           </button>
@@ -90,7 +94,10 @@ export function Value({ value, onChange, onSettle, step = 0.01, min = -Infinity,
         const dx = e.clientX - d.x;
         if (!d.moved && Math.abs(dx) < 3) return;
         d.moved = true;
-        onChange(clamp(d.v + dx * step * (e.shiftKey ? 10 : 1)), true);
+        const next = clamp(d.v + dx * step * (e.shiftKey ? 10 : 1));
+        /* A soft tick every five steps, so dragging a value feels like turning a dial. */
+        if (Math.floor(next / (step * 5)) !== Math.floor(value / (step * 5))) sound.tick(0.2);
+        onChange(next, true);
       }}
       onPointerUp={() => {
         const d = drag.current;

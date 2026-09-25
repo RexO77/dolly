@@ -10,6 +10,7 @@ import { Button } from '../ui/controls.jsx';
 import { Command } from '../ui/Command.jsx';
 import { RenderButton } from '../ui/RenderButton.jsx';
 import { Icon } from '../ui/Icon.jsx';
+import { sound } from '../ui/sound.js';
 
 function OpenLink({ onClick, children = 'Open' }) {
   return <button type="button" className="link" onClick={onClick}>{children}<Icon name="arrow" size={14} /></button>;
@@ -25,8 +26,10 @@ export function ClipRow({ library, summary, stage, onOpen }) {
     setError(null);
     try {
       await library.render(summary.name);
+      sound.done();
       return true;
     } catch (e) {
+      sound.error();
       setError(`The render stopped: ${e.message}`);
       return false;
     }

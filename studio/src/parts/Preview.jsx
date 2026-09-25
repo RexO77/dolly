@@ -12,6 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { resolve } from '../model/clip.js';
 import { drawDelivered, drawScreen } from '../model/picture.js';
 import { useVersion, usePicture, cx } from '../hooks.js';
+import { sound } from '../ui/sound.js';
 
 const AMBIENT = { width: 32, height: 20 };
 
@@ -113,7 +114,11 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
     <div className="preview">
       <canvas ref={ambient} className="preview-ambient" width={AMBIENT.width} height={AMBIENT.height} aria-hidden="true" />
       {/* A click on the picture plays or pauses it, as on any video; space does the same from the keyboard. */}
-      <div className="preview-box" ref={box} onClick={mode === 'frame' ? undefined : () => transport.toggle()}>
+      <div className="preview-box" ref={box} onClick={mode === 'frame' ? undefined : () => {
+        if (transport.playing) sound.pause();
+        else sound.play();
+        transport.toggle();
+      }}>
         {mode === 'render' && renderUrl ? (
           <video ref={rendered} className="preview-media" src={renderUrl} muted playsInline style={{ width: cssW, height: cssH }} />
         ) : (
