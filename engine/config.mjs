@@ -4,15 +4,18 @@
  * optionally, a project.mjs of hooks. A clip is one scenario module in its
  * scenarios/.
  */
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import presets from './encode.json' with { type: 'json' };
+import encodePresets from './encode.json' with { type: 'json' };
 import { expand } from './workspace.mjs';
+import { readJson } from './files.mjs';
 
 /** Where Dolly itself is installed: the Studio's files and the engine live here, never a user's clips. */
 export const PACKAGE = fileURLToPath(new URL('..', import.meta.url));
-export { presets, expand };
+
+/** The delivery presets (`web-1920`), and `master`, the settings every take is stitched with. */
+export const presets = encodePresets;
 
 /** Every project in a workspace: name, alias and folder. */
 export function listProjects(ws) {
@@ -21,33 +24,37 @@ export function listProjects(ws) {
   return readdirSync(dir, { withFileTypes: true })
     .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'project.json')))
     .map((d) => {
-      const cfg = JSON.parse(readFileSync(join(dir, d.name, 'project.json'), 'utf8'));
-      return { name: cfg.name ?? d.name, alias: cfg.alias, dir: join(dir, d.name) };
+      const config = readJson(join(dir, d.name, 'project.json'));
+      return { name: config.name ?? d.name, alias: config.alias, dir: join(dir, d.name) };
     });
 }
 
 /** A project by name or alias, with every path resolved. */
 export async function loadProject(ws, name, { masters, out } = {}) {
-  const found = listProjects(ws).find((p) => p.name === name || p.alias === name);
+  const projects = listProjects(ws);
+  const found = projects.find((p) => p.name === name || p.alias === name);
   if (!found) {
-    const known = listProjects(ws).map((p) => (p.alias ? `${p.name} (${p.alias})` : p.name)).join(', ');
-    throw new Error(`no project "${name}" in ${ws.root}${known ? `; there is ${known}` : '; `dolly init <name>` adds one'}`);
+    const known = projects.map((p) => (p.alias ? `${p.name} (${p.alias})` : p.name)).join(', ');
+    throw new Error(`this workspace has no project "${name}"; ${known ? `it has ${known}` : `\`dolly init ${name} --from <repo>\` adds it`}`);
   }
-  const cfg = JSON.parse(readFileSync(join(found.dir, 'project.json'), 'utf8'));
-  if (!cfg.base) throw new Error(`${found.name}/project.json needs a "base" URL`);
+  const config = readJson(join(found.dir, 'project.json'));
+  if (!config.base) throw new Error(`projects/${found.name}/project.json needs a "base": the URL the product answers at, like "http://localhost:5173"`);
   const hooksFile = join(found.dir, 'project.mjs');
   const hooks = existsSync(hooksFile) ? await import(pathToFileURL(hooksFile).href) : {};
-  const preset = presets[cfg.preset ?? 'web-1920'];
-  if (!preset) throw new Error(`${found.name}: no preset "${cfg.preset}"; there is ${Object.keys(presets).filter((k) => k !== 'master').join(', ')}`);
+  const preset = presets[config.preset ?? 'web-1920'];
+  if (!preset || config.preset === 'master') {
+    const names = Object.keys(presets).filter((k) => k !== 'master').join(', ');
+    throw new Error(`projects/${found.name}/project.json asks for the preset "${config.preset}", which Dolly does not have; use ${names}`);
+  }
   return {
-    ...cfg,
+    ...config,
     name: found.name,
     dir: found.dir,
     workspace: ws,
-    viewport: { width: 1440, height: 900, dpr: 2, ...cfg.viewport },
-    query: cfg.query ?? {},
-    start: cfg.start && { ...cfg.start, cwd: expand(cfg.start.cwd) },
-    deliver: Object.fromEntries(Object.entries(cfg.deliver ?? {}).map(([k, v]) => [k, expand(v)])),
+    viewport: { width: 1440, height: 900, dpr: 2, ...config.viewport },
+    query: config.query ?? {},
+    start: config.start && { ...config.start, cwd: expand(config.start.cwd) },
+    deliver: Object.fromEntries(Object.entries(config.deliver ?? {}).map(([key, dir]) => [key, expand(dir)])),
     preset,
     hooks,
     paths: {
@@ -58,6 +65,17 @@ export async function loadProject(ws, name, { masters, out } = {}) {
       tmp: join(ws.paths.tmp, found.name),
     },
   };
+}
+
+/** The folder a project delivers `key` to, or an error that says how to name one. */
+export function deliverFolder(project, key, what) {
+  const dir = project.deliver[key];
+  if (!dir) {
+    const named = Object.keys(project.deliver);
+    throw new Error(`${project.name}'s project.json names no deliver folder "${key}" for ${what}`
+      + `${named.length ? ` (it names ${named.join(', ')})` : ''}; add one under "deliver", like "${key}": "~/site/public/media"`);
+  }
+  return dir;
 }
 
 /** The clip names a project has scenarios for. */
@@ -81,14 +99,14 @@ export function matchClips(project, patterns, { recorded = false } = {}) {
   }
   const all = [...names].sort();
   if (!patterns.length) return all;
-  const out = [];
-  for (const p of patterns) {
-    const re = new RegExp(`^${p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`);
-    const hit = all.filter((n) => re.test(n));
-    if (!hit.length) throw new Error(`${project.name} has no clip matching "${p}"`);
-    out.push(...hit.filter((n) => !out.includes(n)));
+  const matched = [];
+  for (const pattern of patterns) {
+    const glob = new RegExp(`^${pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*')}$`);
+    const hits = all.filter((name) => glob.test(name));
+    if (!hits.length) throw new Error(`${project.name} has no clip matching "${pattern}"; \`dolly list ${project.name}\` shows its clips`);
+    matched.push(...hits.filter((name) => !matched.includes(name)));
   }
-  return out;
+  return matched;
 }
 
 /** Defaults every scenario's `meta` starts from. */
@@ -129,8 +147,9 @@ export async function loadClip(project, name) {
 /** The page URL for a clip: the project's base and the clip's path, its query spliced in before any hash route. */
 export function clipUrl(project, meta, extra = {}) {
   const query = { ...meta.query, ...extra };
-  const [path, hash] = meta.url.split('#');
+  const hashAt = meta.url.indexOf('#');
+  const path = hashAt < 0 ? meta.url : meta.url.slice(0, hashAt);
   const url = new URL(path, project.base);
-  for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
-  return `${url.href}${hash !== undefined ? `#${hash}` : ''}`;
+  for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
+  return `${url.href}${hashAt < 0 ? '' : meta.url.slice(hashAt)}`;
 }

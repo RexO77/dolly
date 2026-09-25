@@ -32,7 +32,7 @@ export default async function deliver({ args: [name, ...patterns], flags, projec
       const clip = await loadClip(p, c);
       if (!existsSync(clip.paths.out)) continue;
       const r = deliverClip(p, clip, { overwrite: flags.yes });
-      r.done.forEach((f) => log(`  ${f}`));
+      r.copied.forEach((f) => log(`  ${f}`));
       held = held.concat(r.held);
     }
   }
