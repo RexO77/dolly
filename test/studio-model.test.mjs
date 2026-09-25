@@ -198,3 +198,38 @@ test('across a cut the preview crossfades over the fade, the way the render does
   assert.equal(c.masterTime(3.6), 3.6);
   assert.equal(c.masterTime(3.9), 6.4);
 });
+
+test('the product shot tilts the wide shots, turns the leans flat, and the pose moves on the camera curve', () => {
+  const c = walk();
+  c.productShot();
+  assert.equal(c.spec.stage.background, 'dusk');
+  assert.deepEqual(c.shots.map((s) => s.flat), [false, true, true, false, false]);
+  const mid = c.pose(1.6);
+  assert.ok(mid.x > 0 && mid.x < 14, 'halfway through the lean, the card is part way to flat');
+  assert.equal(c.pose(4).x, 0);
+});
+
+test('tilting a hold turns both its keyframes, a tilt-only change reads as a turn, and removing the stage clears every tilt', () => {
+  const c = walk();
+  const hold = c.shots[2];
+  c.setTilt(hold, { x: 8, y: -10, z: 0 });
+  assert.ok(c.spec.stage, 'tilting turns the stage on');
+  assert.deepEqual(c.shotById(hold.id).tilt, { x: 8, y: -10, z: 0 });
+  assert.equal(c.shots.find((s) => s.id === hold.id).kind, 'hold');
+  assert.equal(shotTitle(c.shots[1]), 'Lean in', 'the lean into a tilted hold is still a lean');
+  const flatHold = c.shots[4];
+  c.setTilt(c.shotById(flatHold.id), { x: 0, y: 12, z: 0 });
+  const turned = c.shots.filter((s) => s.kind === 'turn');
+  assert.equal(turned.length, 0, 'both ends of a hold turn together, so it is still a hold');
+  c.removeStage();
+  assert.equal(c.spec.stage, undefined);
+  assert.ok(c.spec.camera.every((k) => !k.tilt));
+});
+
+test('reframing a shot keeps its tilt', () => {
+  const c = walk();
+  const hold = c.shots[2];
+  c.setTilt(hold, { x: 6, y: 0, z: 0 });
+  c.frameShot(c.shotById(hold.id), [0.5, 0.5, 1.3]);
+  assert.deepEqual(c.shotById(hold.id).tilt, { x: 6, y: 0, z: 0 });
+});

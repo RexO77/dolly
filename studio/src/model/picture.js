@@ -5,6 +5,7 @@
  * master are on screen, so a second video follows the far side of the cut
  * and the two are blended as the render blends them.
  */
+import { stageCorners, homography, cssMatrix } from '../../../engine/camera/stage.mjs';
 import { viewBox, spotAlpha } from '../../../engine/camera/math.mjs';
 import { WASH, WASH_ALPHA, SPOT_RADIUS } from '../../../engine/camera/grammar.mjs';
 
@@ -272,4 +273,43 @@ export async function thumbnails(clip, times, width, { signal } = {}) {
   video.removeAttribute('src');
   video.load();
   return out;
+}
+
+/**
+ * The stage behind the card at one pose: the background gradient and its
+ * vignette, and the card's soft shadow, on a W x H canvas at output size.
+ * The card itself is the delivered canvas, turned by `stageTransform`.
+ */
+export function drawStageBack(c, stage, pose, W, H) {
+  const k = W / 1920;
+  const { from, to, vignette } = stage.background;
+  const g = c.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, `rgb(${from.join(',')})`);
+  g.addColorStop(1, `rgb(${to.join(',')})`);
+  c.fillStyle = g;
+  c.fillRect(0, 0, W, H);
+  if (vignette > 0) {
+    const r = Math.hypot(W, H) / 2;
+    const v = c.createRadialGradient(W / 2, H / 2, r * 0.35, W / 2, H / 2, r);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, `rgba(0,0,0,${vignette})`);
+    c.fillStyle = v;
+    c.fillRect(0, 0, W, H);
+  }
+  const corners = stageCorners(stage, pose, W, H);
+  const { strength, blur, drop } = stage.shadow;
+  c.save();
+  c.filter = `blur(${(blur * k) / 2}px)`;
+  c.fillStyle = `rgba(0,0,0,${strength})`;
+  c.beginPath();
+  corners.forEach(([x, y], i) => (i ? c.lineTo(x, y + drop * k) : c.moveTo(x, y + drop * k)));
+  c.closePath();
+  c.fill();
+  c.restore();
+  return corners;
+}
+
+/** The CSS transform that puts a w x h element holding the delivered frame where the stage puts the card, drawn `scale` CSS px per output px. */
+export function stageTransform(stage, pose, W, H, w, h, scale) {
+  return cssMatrix(homography(stageCorners(stage, pose, W, H)), w, h, scale);
 }

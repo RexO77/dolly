@@ -220,6 +220,10 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 .preview-loading { color: var(--text-3); }
 .preview-media { position: relative; display: block; border-radius: 4px; outline: 1px solid var(--image-edge); outline-offset: -1px; }
 .preview-screen { position: absolute; inset: 0; border-radius: 0; outline: none; }
+/* The stage: the background and shadow on one canvas, the card on another, turned in 3D with the renderer's own homography. */
+.stage-view { overflow: hidden; }
+.stage-back { position: absolute; inset: 0; width: 100%; height: 100%; }
+.stage-card { position: absolute; left: 0; top: 0; transform-origin: 0 0; backface-visibility: hidden; }
 .preview { --picture-well: var(--stage-ink); }
 /* A blurred copy of the picture glows on the well around it: the footage lights the room. */
 .preview-ambient { position: absolute; inset: 20px; width: calc(100% - 40px); height: calc(100% - 40px); z-index: -1; pointer-events: none; filter: blur(36px) saturate(1.6); opacity: 0.22; }
@@ -411,3 +415,56 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
   .clip:hover .clip-poster img { box-shadow: 0 0 36px -6px color-mix(in oklch, var(--wash) 45%, transparent); }
 }
 .brand-mark { box-shadow: inset 0 0 0 1.5px var(--text-1), 0 0 14px -2px color-mix(in oklch, var(--wash) 60%, transparent); }
+
+/* ── Tilt ──
+ * A little stage of its own: the card turned in 3D, its X and Y axes drawn
+ * through it and the Z roll as a ring round its face. The axes keep the
+ * convention every 3D tool uses, muted: X red, Y green, Z blue. */
+.tilt { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.tilt-pad {
+  position: relative; display: grid; place-items: center; flex: none; overflow: hidden; cursor: grab; touch-action: none;
+  border-radius: var(--radius-tile); background: radial-gradient(120% 90% at 50% 20%, oklch(0.26 0.01 301), var(--stage-ink));
+  box-shadow: inset 0 0 0 1px var(--line);
+  --axis-x: oklch(0.7 0.14 25); --axis-y: oklch(0.76 0.13 150); --axis-z: oklch(0.72 0.11 250);
+}
+.tilt-pad[data-gripped] { cursor: grabbing; }
+.tilt-floor { position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(to top, oklch(0 0 0 / 0.35), transparent); pointer-events: none; }
+.tilt-card {
+  position: relative; border-radius: 5px; background: linear-gradient(160deg, oklch(0.96 0.004 106), oklch(0.86 0.006 106));
+  box-shadow: 0 14px 22px -10px oklch(0 0 0 / 0.8), inset 0 0 0 1px oklch(1 0 0 / 0.5);
+  transform-style: preserve-3d; transition: transform 60ms linear;
+}
+.tilt-card-bar { position: absolute; inset: 0 0 auto; height: 9px; border-radius: 5px 5px 0 0; background: oklch(0.8 0.006 106); }
+.tilt-card-side { position: absolute; left: 0; top: 9px; bottom: 0; width: 22%; background: oklch(0.9 0.005 106); border-radius: 0 0 0 5px; }
+.tilt-card-lines { position: absolute; left: 30%; right: 8%; top: 17px; height: 26px; background: repeating-linear-gradient(to bottom, oklch(0.7 0.01 106 / 0.7) 0 2px, transparent 2px 7px); }
+.tilt-axes { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.tilt-axis line { stroke-width: 1.5; stroke-linecap: round; }
+.tilt-axis circle { stroke-width: 1.5; }
+.tilt-axis text { font: 600 8px var(--mono); letter-spacing: 0; fill: oklch(0.16 0.006 301); }
+.tilt-axis-x line, .tilt-axis-x circle { stroke: var(--axis-x); }
+.tilt-axis-y line, .tilt-axis-y circle { stroke: var(--axis-y); }
+.tilt-axis-z line, .tilt-axis-z circle { stroke: var(--axis-z); }
+.tilt-axis-x circle { fill: var(--axis-x); }
+.tilt-axis-y circle { fill: var(--axis-y); }
+.tilt-axis-z circle { fill: var(--axis-z); }
+.tilt-ring { fill: none; stroke: var(--axis-z); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.7; }
+.tilt-origin { fill: oklch(1 0 0 / 0.9); }
+.tilt-values { display: grid; gap: 6px; align-content: start; min-width: 150px; }
+.tilt-value { display: grid; grid-template-columns: 18px 36px 1fr; align-items: center; gap: 6px; }
+.tilt-chip { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 5px; font: 600 9px var(--mono); letter-spacing: 0; color: oklch(0.16 0.006 301); }
+.tilt-chip.tilt-axis-x { background: var(--axis-x, oklch(0.7 0.14 25)); }
+.tilt-chip.tilt-axis-y { background: var(--axis-y, oklch(0.76 0.13 150)); }
+.tilt-chip.tilt-axis-z { background: var(--axis-z, oklch(0.72 0.11 250)); }
+.tilt-presets { display: flex; gap: 6px; padding-top: 2px; }
+@media (prefers-reduced-motion: reduce) { .tilt-card { transition: none; } }
+
+/* ── Stage ── */
+.stage-start { padding: 0 4px; }
+.stage-swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.stage-swatch {
+  position: relative; display: grid; align-items: end; width: 62px; height: 40px; padding: 4px 6px; border-radius: 7px;
+  font: var(--text-xs) var(--sans); color: oklch(1 0 0 / 0.85); text-align: start; text-shadow: 0 1px 2px oklch(0 0 0 / 0.5);
+  box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow 150ms ease-out;
+}
+.stage-swatch[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 2px var(--accent); }
+.stage-swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

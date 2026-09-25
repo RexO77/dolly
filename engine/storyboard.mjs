@@ -12,6 +12,8 @@ import { SOFT_BELOW } from './camera/grammar.mjs';
 
 const same = (a, b) => ['x', 'y', 'w', 'h'].every((k) => Math.abs(a[k] - b[k]) < 1e-6);
 const near = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 1e-4);
+/** A keyframe's stage pose: its tilt, and its inset (-1 for the stage's own). */
+export const poseOf = (k) => [k.tilt?.x ?? 0, k.tilt?.y ?? 0, k.tilt?.z ?? 0, k.inset ?? -1];
 
 /** The take's name for a rect, if it measured one like it. */
 export function boxName(rect, boxes = {}) {
@@ -27,7 +29,8 @@ export function subject(k, boxes = {}) {
 
 /**
  * The camera as shots: every span between two keyframes is a hold (the
- * view stays put) or a move (lean in, pull back, hop).
+ * view stays put) or a move (lean in, pull back, hop), or a turn (the view
+ * stays put and the stage's card tilts).
  */
 export function segments(camera, boxes = {}) {
   const keys = [...camera].sort((a, b) => a.t - b.t);
@@ -40,7 +43,8 @@ export function segments(camera, boxes = {}) {
     const vb = resolve(b);
     let kind = 'hold';
     if (!near(va, vb)) kind = b.wide || vb[2] === 1 ? 'pull' : vb[2] > va[2] + 1e-4 ? 'lean' : 'hop';
-    const what = kind === 'hold' ? `hold ${subject(a, boxes)}` : kind === 'pull' ? 'pull back to wide' : `${kind === 'lean' ? 'lean in on' : 'hop to'} ${subject(b, boxes)}`;
+    else if (!near(poseOf(a), poseOf(b))) kind = 'turn';
+    const what = kind === 'hold' ? `hold ${subject(a, boxes)}` : kind === 'turn' ? (poseOf(b).slice(0, 3).every((v) => v === 0) ? 'turn the card flat' : 'turn the card') : kind === 'pull' ? 'pull back to wide' : `${kind === 'lean' ? 'lean in on' : 'hop to'} ${subject(b, boxes)}`;
     out.push({ t0: a.t, t1: b.t, kind, what, z: vb[2], ease: b.ease === 'smooth' ? 'smooth' : 'spring', from: i, to: i + 1 });
   }
   return out;
@@ -52,7 +56,7 @@ export function storyboard(spec, take = null) {
   const rows = segments(spec.camera, boxes).map((s) => ({
     t: s.t0,
     lane: 'camera',
-    what: s.kind === 'hold' || s.kind === 'pull' ? s.what : `${s.what}, z ${s.z.toFixed(3).replace(/\.?0+$/, '')}`,
+    what: s.kind === 'hold' || s.kind === 'pull' || s.kind === 'turn' ? s.what : `${s.what}, z ${s.z.toFixed(3).replace(/\.?0+$/, '')}`,
     note: s.kind === 'hold' ? `${(s.t1 - s.t0).toFixed(2)}s` : `${s.ease} ${(s.t1 - s.t0).toFixed(2)}s`,
   }));
   /* The camera's beats are synced to the picture; the take's are as the scenario marked them. */

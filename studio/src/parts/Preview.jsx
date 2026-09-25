@@ -10,7 +10,7 @@
  */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { resolve } from '../model/clip.js';
-import { drawDelivered, drawScreen } from '../model/picture.js';
+import { drawDelivered, drawScreen, drawStageBack, stageTransform } from '../model/picture.js';
 import { useVersion, usePicture, cx } from '../hooks.js';
 import { sound } from '../ui/sound.js';
 
@@ -21,6 +21,7 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
   const canvas = useRef(null);
   const rendered = useRef(null);
   const ambient = useRef(null);
+  const back = useRef(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [frame, setFrame] = useState(null);
   const version = useVersion(clip);
@@ -67,6 +68,23 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
       }
       drawDelivered(c.getContext('2d'), video, clip, t, OW, OH, transport.fade);
       setFrame(null);
+      /* On a stage, the delivered frame becomes a card: the background and shadow are drawn behind it, and the canvas is turned in 3D. */
+      const stage = clip.stage;
+      const b = back.current;
+      if (stage && b) {
+        if (b.width !== OW || b.height !== OH) {
+          b.width = OW;
+          b.height = OH;
+        }
+        const pose = clip.pose(t);
+        drawStageBack(b.getContext('2d'), stage, pose, OW, OH);
+        const scale = cssW / OW;
+        c.style.transform = stageTransform(stage, pose, OW, OH, cssW, cssH, scale);
+        c.style.borderRadius = `${(stage.radius * (OW / 1920) * scale) / pose.inset}px`;
+      } else {
+        c.style.transform = '';
+        c.style.borderRadius = '';
+      }
     }
     const a = ambient.current;
     if (a?.offsetParent) a.getContext('2d').drawImage(c, 0, 0, AMBIENT.width, AMBIENT.height);
@@ -122,7 +140,14 @@ export function Preview({ clip, transport, video, mode, shot, renderUrl }) {
         {mode === 'render' && renderUrl ? (
           <video ref={rendered} className="preview-media" src={renderUrl} muted playsInline style={{ width: cssW, height: cssH }} />
         ) : (
-          <canvas ref={canvas} className={cx('preview-media', mode === 'frame' && 'preview-screen')} style={mode === 'frame' ? { width: size.w, height: size.h } : { width: cssW, height: cssH }} />
+          mode !== 'frame' && clip.stage ? (
+            <div className="preview-media stage-view" style={{ width: cssW, height: cssH }}>
+              <canvas ref={back} className="stage-back" aria-hidden="true" />
+              <canvas ref={canvas} className="stage-card" style={{ width: cssW, height: cssH }} />
+            </div>
+          ) : (
+            <canvas ref={canvas} className={cx('preview-media', mode === 'frame' && 'preview-screen')} style={mode === 'frame' ? { width: size.w, height: size.h } : { width: cssW, height: cssH }} />
+          )
         )}
         {mode === 'frame' && frame && (
           <div

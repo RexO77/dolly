@@ -9,6 +9,7 @@ import { resolve, shotTitle } from '../model/clip.js';
 import { cx, fmt } from '../hooks.js';
 import { Button, Segmented, Value, Field } from '../ui/controls.jsx';
 import { Lens } from '../ui/Lens.jsx';
+import { Tilt } from '../ui/Tilt.jsx';
 import { SpanBar } from '../ui/SpanBar.jsx';
 import { Curve } from '../ui/Curve.jsx';
 import { Icon } from '../ui/Icon.jsx';
@@ -92,6 +93,9 @@ export function ShotRow({ clip, shot, thumb, current, open, notes, onToggle, onF
               </Field>
               <Field label="Zoom">
                 <Lens value={z} onChange={setZoom} onSettle={settle} max={Math.max(2, Math.ceil(z * 4) / 4)} sharpMax={clip.info.master.width / clip.info.output.width} />
+              </Field>
+              <Field label="Tilt" hint={clip.stage ? undefined : 'Tilting puts the clip on a stage: a card in 3D over a background.'}>
+                <Tilt tilt={shot.tilt} onChange={(t, live) => clip.setTilt(fresh(), t, { live })} onSettle={settle} />
               </Field>
               {isMove && (
                 <Field label="Motion" hint={MOTION_HINT[curve.name]}>
