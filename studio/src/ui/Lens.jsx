@@ -16,14 +16,16 @@ import { sound } from './sound.js';
 /* ─────────────────────────────────────────────────────────
  * THE BARREL
  *
- *   0 ─ 10   the fixed collar, with the index
- *  10 ─ 34   the scale: a mark every 0.025, labels every 0.25
- *  36 ─ 58   the grip: a ridge every 4°
+ *   0 ─ 8    the fixed collar, with the index
+ *   8 ─ 28   the scale: a mark every 0.025, labels every 0.25
+ *  29 ─ 46   the grip: a ridge every 4°
  *
  * One unit of zoom is DEG_PER_UNIT of turn. At the centre, one pixel of drag
  * moves the barrel one pixel under the index.
  * ───────────────────────────────────────────────────────── */
-const H = 58;
+const H = 46;
+const COLLAR = 8;
+const SEAM = 28;
 const DEG_PER_UNIT = 150;
 const MARK = 0.025;
 const RIDGE_DEG = 4;
@@ -32,7 +34,7 @@ const FRICTION = 0.9; // velocity kept per 16ms of coasting
 const rad = (d) => (d * Math.PI) / 180;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function Lens({ value, onChange, onSettle, max = 2, sharpMax = Infinity, width = 280, label = 'Zoom' }) {
+export function Lens({ value, onChange, onSettle, max = 2, sharpMax = Infinity, width = 232, label = 'Zoom' }) {
   const id = `lens${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const svg = useRef(null);
   const drag = useRef(null);
@@ -121,16 +123,16 @@ export function Lens({ value, onChange, onSettle, max = 2, sharpMax = Infinity, 
     const quarter = i % 10 === 0;
     const soft = z > sharpMax + 1e-6;
     const cls = ['lens-mark', quarter && 'lens-mark-major', lean && 'lens-mark-lean', soft && 'lens-mark-soft'].filter(Boolean).join(' ');
-    marks.push(<line key={`m${i}`} className={cls} x1={x} x2={x} y1={11} y2={lean ? 24 : quarter ? 21 : 16} strokeWidth={(quarter || lean ? 1.5 : 1) * (0.45 + 0.55 * c)} opacity={0.25 + 0.75 * c ** 1.5} />);
+    marks.push(<line key={`m${i}`} className={cls} x1={x} x2={x} y1={COLLAR + 1} y2={lean ? 19 : quarter ? 17 : 13} strokeWidth={(quarter || lean ? 1.5 : 1) * (0.45 + 0.55 * c)} opacity={0.25 + 0.75 * c ** 1.5} />);
     if (quarter) {
       const text = z === 1 ? '1×' : Number.isInteger(z) ? `${z}×` : String(Number(z.toFixed(2)));
       marks.push(
-        <text key={`l${i}`} className={soft ? 'lens-engraving lens-mark-soft' : 'lens-engraving'} transform={`translate(${x} 32) scale(${Math.max(0.05, c)} 1)`} textAnchor="middle" opacity={0.2 + 0.8 * c ** 2}>
+        <text key={`l${i}`} className={soft ? 'lens-engraving lens-mark-soft' : 'lens-engraving'} transform={`translate(${x} 25.5) scale(${Math.max(0.05, c)} 1)`} textAnchor="middle" opacity={0.2 + 0.8 * c ** 2}>
           {text}
         </text>,
       );
     }
-    if (lean) marks.push(<circle key="lean-dot" className="lens-lean-dot" cx={x} cy={29} r={2 * (0.5 + 0.5 * c)} opacity={0.3 + 0.7 * c} />);
+    if (lean) marks.push(<circle key="lean-dot" className="lens-lean-dot" cx={x} cy={23} r={1.6 * (0.5 + 0.5 * c)} opacity={0.3 + 0.7 * c} />);
   }
 
   /* ── The grip: ridges all the way round, rolling with the ring ── */
@@ -141,7 +143,7 @@ export function Lens({ value, onChange, onSettle, max = 2, sharpMax = Infinity, 
     const b = project(Math.min(89.9, deg + RIDGE_DEG * 0.3));
     const c = Math.cos(rad(deg));
     if (b - a < 0.2) continue;
-    ridges.push(<rect key={deg.toFixed(2)} className="lens-ridge" x={a} y={38} width={b - a} height={H - 41} rx={Math.min(1, (b - a) / 2)} opacity={0.15 + 0.85 * c ** 1.2} />);
+    ridges.push(<rect key={deg.toFixed(2)} className="lens-ridge" x={a} y={SEAM + 2} width={b - a} height={H - SEAM - 4} rx={Math.min(1, (b - a) / 2)} opacity={0.15 + 0.85 * c ** 1.2} />);
   }
 
   const state = value <= 1.0005 ? 'wide' : Math.abs(value - LEAN_Z) < 1e-6 ? 'the lean' : value > sharpMax + 1e-6 ? 'soft past here' : '';
@@ -220,21 +222,21 @@ export function Lens({ value, onChange, onSettle, max = 2, sharpMax = Infinity, 
             <stop offset="1" stopColor="#000" stopOpacity="0.35" />
           </linearGradient>
           <clipPath id={`${id}-shape`}>
-            <rect width={width} height={H} rx={9} />
+            <rect width={width} height={H} rx={8} />
           </clipPath>
         </defs>
         <g clipPath={`url(#${id}-shape)`}>
           <rect className="lens-body" width={width} height={H} />
-          <rect className="lens-collar" width={width} height={10} />
-          <rect className="lens-grip" y={36} width={width} height={H - 36} />
+          <rect className="lens-collar" width={width} height={COLLAR} />
+          <rect className="lens-grip" y={SEAM + 1} width={width} height={H - SEAM - 1} />
           {ridges}
-          <rect y={36} width={width} height={H - 36} fill={`url(#${id}-grip)`} />
+          <rect y={SEAM + 1} width={width} height={H - SEAM - 1} fill={`url(#${id}-grip)`} />
           {marks}
-          <rect className="lens-chamfer" y={10} width={width} height={1} />
-          <rect className="lens-seam" y={35} width={width} height={1} />
+          <rect className="lens-chamfer" y={COLLAR} width={width} height={1} />
+          <rect className="lens-seam" y={SEAM} width={width} height={1} />
           <rect width={width} height={H} fill={`url(#${id}-form)`} pointerEvents="none" />
         </g>
-        <path className="lens-index" d={`M${cx - 4} 2.5h8l-4 5.5z`} />
+        <path className="lens-index" d={`M${cx - 3.5} 1.5h7l-3.5 5z`} />
       </svg>
       <span className="lens-readout">
         {readout}

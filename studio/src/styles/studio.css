@@ -329,9 +329,9 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
  * anodised metal, white engraving, a rubber grip, the wash for the index
  * and the lean, amber past the take's sharp limit. */
 
-.lens { position: relative; display: grid; gap: 6px; }
+.lens { position: relative; display: grid; gap: 4px; }
 .lens-barrel {
-  display: block; cursor: grab; touch-action: none; border-radius: 9px;
+  display: block; cursor: grab; touch-action: none; border-radius: 8px;
   box-shadow: 0 0 0 1px oklch(0 0 0 / 0.5), 0 1px 0 0.5px oklch(1 0 0 / 0.06), 0 10px 22px -10px oklch(0 0 0 / 0.8);
 }
 .lens-barrel[data-gripped] { cursor: grabbing; }
@@ -343,7 +343,7 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 .lens-mark { stroke: #ece9e2; stroke-linecap: round; }
 .lens-mark-major { stroke: #f6f4ef; }
 .lens-mark-lean { stroke: var(--wash); }
-.lens-engraving { fill: #ece9e2; font: 500 9.5px var(--mono); letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.lens-engraving { fill: #ece9e2; font: 500 8.5px var(--mono); letter-spacing: 0; font-variant-numeric: tabular-nums; }
 .lens-mark-soft { stroke: var(--note); fill: var(--note); }
 .lens-lean-dot { fill: var(--wash); }
 .lens-chamfer { fill: #fff; opacity: 0.14; }
