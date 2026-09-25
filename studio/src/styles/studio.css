@@ -108,7 +108,7 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 /* ── A command to copy ── */
 
 .cmd { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; height: 32px; padding: 0 2px 0 10px; border-radius: var(--radius); background: var(--fill); }
-.cmd code { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); user-select: all; }
+.cmd code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); user-select: all; }
 .cmd code::before { content: "$ "; color: var(--text-4); user-select: none; }
 .cmd .btn { height: 28px; min-width: 64px; background: transparent; font-size: var(--text-s); }
 .cmd .btn[data-copied] svg { color: var(--ok); }

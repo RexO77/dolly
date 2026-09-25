@@ -57,8 +57,7 @@
     "build:site": "vite build --config site/vite.config.mjs",
     "dev:site": "vite --config site/vite.config.mjs --port 4850",
     "media:site": "node site/scripts/media.mjs",
-    "frames:site": "node site/scripts/frames.mjs",
-    "icons:site": "node site/scripts/icons.mjs"
+    "frames:site": "node site/scripts/frames.mjs"
   },
   "dependencies": {
     "playwright-core": "^1.63.0"

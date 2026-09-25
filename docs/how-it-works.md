@@ -157,7 +157,7 @@ This is what happens, in order:
 5. **Record.** It asks Chrome for a picture of the page every time the page repaints, at the screen's full pixel count. On a retina screen a 1440 by 900 page comes out 2880 by 1800. These pictures show only the page, so the mouse pointer is never in them.
 6. **Play the take.** It waits the lead time (0.7 seconds of stillness by default), plays the take, then keeps recording for the tail (1.4 seconds by default) so the clip ends on a still frame.
 7. **Stitch.** It joins the pictures into one video at a steady 30 frames per second. This video is the **master**.
-8. **Direct.** It builds the camera straight away (see below), and tells you the next command: `dolly storyboard shop shop-first`.
+8. **Direct.** It builds the camera straight away (see below), and tells you the next command: `dolly studio shop shop-first`.
 
 You never see the window. That is the point.
 
@@ -255,7 +255,7 @@ Every position and size is a share of the screen (0.5 is halfway). Every time is
 ## The Studio
 
 ```sh
-dolly storyboard shop shop-first
+dolly studio shop shop-first
 ```
 
 This opens the Studio in your browser at `http://localhost:4800`. It stays open until you press ctrl-c in the terminal. The Studio is where a person gets a say: you watch the camera over the real recording and adjust it by eye.
@@ -385,13 +385,13 @@ The work splits like this:
   dolly inspect: find buttons and areas
   write the scenario
   dolly record, until the take passes
-  dolly storyboard --text: check beats  -->  dolly storyboard: watch, adjust,
+  dolly studio --text: check beats      -->  dolly studio: watch, adjust,
                                              Save, Render
   dolly render and dolly deliver        <--  when you say so
   (replaces a delivered file only on your word)
 ```
 
-`dolly storyboard shop shop-first --text` prints the camera as a shot list with the beats on the same timeline, so the agent can check that every beat lands while the camera is still. More in [agents.md](agents.md).
+`dolly studio shop shop-first --text` prints the camera as a shot list with the beats on the same timeline, so the agent can check that every beat lands while the camera is still. More in [agents.md](agents.md).
 
 ## Cheat sheet
 
@@ -403,8 +403,8 @@ The work splits like this:
 | `dolly inspect <product> [page]` | lists a page's buttons and areas with their positions, plus a screenshot | before writing a scenario |
 | `dolly list [product]` | shows every clip and where it stands (recorded, rendered, out of date) | to see what needs doing |
 | `dolly record <product> <clip>` | records a take and builds its camera | after writing or changing a scenario, or when the product changed |
-| `dolly storyboard <product> [clip]` | opens the Studio to watch, adjust, Save and Render | to direct a clip by eye |
-| `dolly storyboard <product> <clip> --text` | prints the camera as a shot list | a quick check in the terminal |
+| `dolly studio <product> [clip]` | opens the Studio to watch, adjust, Save and Render | to direct a clip by eye |
+| `dolly studio <product> <clip> --text` | prints the camera as a shot list | a quick check in the terminal |
 | `dolly direct <product> [clip]` | rebuilds the camera from the saved take | after changing a scenario's `direction` |
 | `dolly render <product> [clip]` | makes the final video and poster in `out/` | when the camera is right |
 | `dolly poster <product> <clip> --at S` | remakes only the poster, from S seconds in | when the poster shows the wrong moment |

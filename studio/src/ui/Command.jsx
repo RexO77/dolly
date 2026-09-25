@@ -19,7 +19,8 @@ export function Command({ text }) {
 
   return (
     <span className="cmd">
-      <code>{text}</code>
+      {/* Long commands are cut short to fit; the whole one is in the tooltip and on the clipboard. */}
+      <code title={text}>{text}</code>
       <Button size="s" icon={copied ? 'check' : 'copy'} onClick={copy} data-copied={copied || undefined} aria-label={`Copy ${text}`}>
         {copied ? 'Copied' : 'Copy'}
       </Button>
