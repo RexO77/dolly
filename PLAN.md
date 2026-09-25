@@ -29,12 +29,14 @@ Done and verified:
 ### 1. Studio
 Decided 2026-09-25 from three live prototypes on real takes (studio/proto, deleted once the Studio ships):
 - **Direction: Shot list.** The clip reads as numbered shots, each with the real frame it will show, its timing and its curve; the picture and a film strip sit beside it.
-- **Visual language:** neutral and monochrome, alpha-layered surfaces, compact 36px rows, 13px at weight 500, every value in a monospace, colour only where it means something (the wash is the one warm colour). Light and dark. Refined, not decorative. Dolly's own components, never a copy of another tool's UI.
+- **Visual language (updated 2026-09-25):** Night, picked from three live directions in the spirit of rows.gg: dark first, paper and ink tones with depth from tone steps, Hanken Grotesk and DM Mono bundled, the wash as the one accent. The first light, neutral version read as "too bland and too white". Dolly's own components, never a copy of another tool's UI.
 - **Carried over from the rejected directions:** framing a shot by dragging its frame on the picture (Viewfinder); the activity signal read off the master (all three).
 - **Rejected:** Viewfinder (the most distinctive, but exact values hide in a card); Edit bay (precise, but reads as a generic editor). The first prototype's paper, serif and terracotta read as a template.
 - **Functionality:** retime on the film strip and per-shot span bars, snapping to beats; shot verbs (lean in here, hold, pull back, remove) instead of keyframes; lean on a box the take measured, by name; a one-click fix beside every grammar warning; Studio-directed cameras protected from re-direct; render, then compare with the preview.
+- **Added 2026-09-25:** a home screen of every clip with its state and next step; a lens barrel for zoom (rolls, ticks, a detent at the lean, amber past the sharp limit); quiet Web Audio sounds for every action, behind a speaker toggle; the preview crossfades across cuts like the render; the camera keeps the synced beats so snaps land on what is on screen; the Frame (the clip as a flat card on a background that grows to fill it on a lean).
+- **Rejected 2026-09-25:** a 3D tilt of the clip with perspective. It did not hold up in use; the flat Frame replaced it.
 - Built in React and Motion (Vite), shipped prebuilt as `studio/dist`.
-- Checks: [ ] a clip directed from scratch in the Studio renders to what the preview showed; [ ] a person who has never used it retimes a shot and reframes one without being told how; [ ] Design Critique pass done and its fixes applied.
+- Checks: [ ] a clip directed from scratch in the Studio renders to what the preview showed; [ ] a person who has never used it retimes a shot and reframes one without being told how; [x] Design Critique pass done and its fixes applied (on each of the three directions).
 
 ### 2. Scenario ports
 Every legacy scenario into `~/Programming/dolly-clips/projects/*/scenarios/`, in the storyboard format: a shot-list comment at the top, a `TIMING` block for clip-clock moments, reaches as data.
@@ -45,7 +47,7 @@ Every legacy scenario into `~/Programming/dolly-clips/projects/*/scenarios/`, in
 - One line to install with npm, pnpm, yarn or bun, globally or per workspace; `npx @nischalskanda/dolly` works.
 - `dolly doctor` names the exact fix for anything missing (`brew install ffmpeg webp`, Chrome).
 - CI: lint, tests, `npm pack` contents, install and `dolly --help` on Node 22 and 24 with each package manager.
-- Checks: [ ] a fresh machine gets from nothing to `dolly doctor` all green following the README alone. (Verified locally from the packed tarball with npm, pnpm, yarn 1 and 4, and bun; CI written, not yet run on GitHub.)
+- Checks: [ ] a fresh machine gets from nothing to `dolly doctor` all green following the README alone. (Verified locally from the packed tarball with npm, pnpm, yarn 1 and 4, and bun; CI green on GitHub.) Not yet published to npm.
 
 ### 4. Onboarding
 - `dolly init` makes a workspace, and `dolly init <project>` adds a product: it reads the product's package.json for its dev script and port, and writes `project.json` and a first scenario in the storyboard format.
@@ -56,7 +58,8 @@ Every legacy scenario into `~/Programming/dolly-clips/projects/*/scenarios/`, in
 
 ### 5. Launch video and site (after 1 to 4)
 - `examples/launch/`: a workspace that records the Studio directing a clip; the film is Dolly's launch video.
-- A site whose hero is a live clip you direct by dragging; install per package manager; prompts for agents.
+- A site whose hero is a live clip you direct by dragging; install per package manager; prompts for agents. Built in `site/` from `examples/demo` (Wrenly, a fictional tracker), Night like the Studio; deploys to GitHub Pages once Pages is switched on in the repo's settings.
+- Checks: [ ] the site is live at rexo77.github.io/dolly; [ ] the launch video is shot.
 
 ### Later
 - Moment-anchored cameras (`{at: "click-1"}`), a jank and layout-shift gate on record, posters from `settle`.
