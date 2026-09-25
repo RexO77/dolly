@@ -6,10 +6,11 @@ Dolly records a real web product in a real Chrome window parked off screen, with
 
 ## Layout
 
-- `engine/` the engine: recording (`record`, `capture`, `browser`, `input`), directing (`direct`, `retime`, `camera/`), rendering (`render`, `ffmpeg`), the storyboard server (`studio.mjs`).
-- `engine/camera/` the camera: `math.mjs` (where the view is at any time), `grammar.mjs` (the grammar's numbers), `resample.mjs` (Pillow-exact Lanczos), `frame.mjs`. Pure modules: the Studio runs `math.mjs` and `grammar.mjs` in the browser.
-- `cli/` the `dolly` command: `index.mjs` dispatches, one module per command in `cli/commands/` exporting `usage`, `summary`, optional `flags`, and a default function.
-- `studio/` the Studio (`dolly storyboard`): React and Motion, built with Vite into `studio/dist` (shipped; run `npm run build:studio`). `src/model/` is framework-free (the clip, its edits, verbs and fixes; the transport and drawing) and imports the engine's camera modules directly; `src/ui/` holds Dolly's controls; `src/parts/` the screen; `src/styles/tokens.css` the visual system. Work on it live with `dolly storyboard <p> --dev`.
+- `engine/` the engine: recording (`record`, `capture`, `browser`, `input` for `h`, `hand`, `motion`), directing (`direct`, `retime`, `camera/`), rendering (`render`, `ffmpeg`), files and delivery (`files`), the Studio's server (`studio.mjs`). `engine/index.mjs` is the documented public API.
+- `engine/camera/` the camera: `math.mjs` (where the view is at any time), `grammar.mjs` (the grammar's numbers, the stage's too), `stage.mjs` (the frame as a card turned in 3D: its pose, corners and homography), `resample.mjs` (Pillow-exact Lanczos), `frame.mjs`. Pure modules: the Studio runs `math.mjs`, `grammar.mjs` and `stage.mjs` in the browser.
+- `cli/` the `dolly` command: `index.mjs` dispatches, one module per command in `cli/commands/` exporting `usage`, `summary`, optional `flags`, `details`, `examples` and `aliases`, and a default function.
+- `studio/` the Studio (`dolly studio`, alias `storyboard`): React and Motion, built with Vite into `studio/dist` (shipped; run `npm run build:studio`). `src/model/` is framework-free (the clip, its edits, verbs and fixes; the transport and drawing) and imports the engine's camera modules directly; `src/ui/` holds Dolly's controls (the lens barrel, the tilt card, `sound.js` for the Studio's Web Audio sounds); `src/parts/` the screen; `src/styles/tokens.css` the visual system. Work on it live with `dolly studio <p> --dev`.
+- `site/` the landing page (Vite, built to `site/dist`, deployed to GitHub Pages), and `examples/demo/` a workspace with Wrenly, a fictional product the site's clips are recorded from.
 - The scripts Dolly was ported from are not part of this repo.
 
 ## Workspaces
@@ -20,7 +21,7 @@ A user's clips never live in this repo. They live in a workspace: a folder with 
 
 - The camera grammar is the owner's direction, not a default: establish wide, lean in to about 1.35 on a zero-bounce spring, settle, let the change play with the camera still, pull back and hold. No cursor. A wash-only spotlight, never a ring. Its numbers live only in `engine/camera/grammar.mjs`.
 - The preview must match the render. Anything the Studio shows about the camera comes from `engine/camera/math.mjs`, the module the renderer uses. The resampler is byte-identical to Pillow (so the render of `rec-walk` matches the legacy `camera.py` byte for byte); keep it that way (`test/resample.test.mjs` checks the resampler against a Pillow fixture).
-- The Studio's look: neutral and monochrome, alpha-layered surfaces from `tokens.css`, 13px at weight 500, values in the system monospace, colour only for the wash and for notes that need the person. Light and dark follow the system.
+- The Studio's look is Night (chosen 2026-09-25, in the spirit of rows.gg): dark first whatever the system says, paper and ink tones with depth from tone steps, Hanken Grotesk and DM Mono bundled, the footage lighting the room, the wash as the accent. Colour only where it means something: the wash, notes, and the tilt's X, Y and Z axes. Light is a choice the person makes.
 - Masters are never deleted. A new take moves the previous master into `masters/<product>/.history/`.
 - Nothing writes into a product repo or a site except `dolly deliver`, into the folder a project names, and it never replaces a differing file without `--yes`.
 - Scenarios import nothing: everything they need is on `h` (`h.sleep`, `h.ease`, `h.seeded`, `h.grammar`), so they run from any workspace.
