@@ -1,5 +1,5 @@
 /**
- * Dolly's mark: four candidates, one source. Writes each as an SVG that
+ * Dolly's mark: candidates, one source. Writes each as an SVG that
  * follows the browser's light or dark tab (public/icons/*.svg), the chosen
  * one as public/icon.svg with a 180px apple-touch-icon.png, and a preview
  * sheet at public/icon-options.html with every mark at 16, 32, 64 and
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { launchOptions } from '../../engine/browser.mjs';
 
-const CHOSEN = 'd';
+const CHOSEN = 'camera-plain';
 
 const INK = '#1a191d';
 const PAPER = '#f5f5f2';
@@ -25,31 +25,31 @@ const WASH = '#f3e6d2'; // oklch(0.93 0.03 78)
  * light tab and in a dark one.
  */
 const MARKS = {
-  crop: {
-    name: 'Frame within a frame',
-    idea: 'the screen, and the camera’s crop leaning in on its lower right',
-    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="5" y="7" width="22" height="18" rx="3.5"/><rect class="w" x="13" y="13" width="11" height="9" rx="2"/>',
-    light: { t: INK, a: PAPER, w: INK },
-    dark: { t: PAPER, a: INK, w: WASH },
-  },
-  wash: {
-    name: 'The wash',
-    idea: 'a crisp window cut out of the warm field the spotlight lays down',
-    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="10" y="9" width="17" height="13" rx="3"/>',
-    light: { t: WASH, a: INK },
-    dark: { t: WASH, a: INK },
-  },
-  lean: {
-    name: 'The lean',
-    idea: 'the camera’s zoom over a clip as one shape: quick up on the spring, hold, back down',
-    body: '<rect class="t" width="32" height="32" rx="8"/><path class="a" d="M4 25c3.2 0 3.6-13 9.5-13h5c5.9 0 6.3 13 9.5 13z"/>',
+  'camera': {
+    name: 'Camera d',
+    idea: 'the owner’s sketch: a camera body is the bowl, a tall mast is the stem, with a viewfinder and a slot in the mast',
+    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="7" y="14" width="17" height="11" rx="3"/><rect class="a" x="19.5" y="6" width="4.5" height="19" rx="1.75"/><rect class="t" x="9.5" y="16.5" width="4.5" height="2.5" rx="1"/><rect class="t" x="21" y="8.5" width="1.5" height="12.5" rx="0.75"/>',
     light: { t: INK, a: WASH },
     dark: { t: PAPER, a: INK },
   },
-  d: {
-    name: 'A viewfinder d',
-    idea: 'a lowercase d whose bowl is a viewfinder: a screen-shaped window, not a circle',
-    body: '<rect class="t" width="32" height="32" rx="8"/><path class="a" fill-rule="evenodd" d="M19 5.5h3.5a1 1 0 0 1 1 1V22a4 4 0 0 1-4 4h-7A4.5 4.5 0 0 1 8 21.5v-6A4.5 4.5 0 0 1 12.5 11H19zM13.5 15h4.5a1.5 1.5 0 0 1 1.5 1.5v4a1.5 1.5 0 0 1-1.5 1.5h-4.5a1.5 1.5 0 0 1-1.5-1.5v-4a1.5 1.5 0 0 1 1.5-1.5z"/>',
+  'camera-plain': {
+    name: 'Camera d, plain',
+    idea: 'the same letter with only the viewfinder, so it holds up at tab size',
+    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="7" y="14" width="17" height="11" rx="3"/><rect class="a" x="19.5" y="6" width="4.5" height="19" rx="1.75"/><rect class="t" x="9.5" y="16.5" width="4.5" height="2.5" rx="1"/>',
+    light: { t: INK, a: WASH },
+    dark: { t: PAPER, a: INK },
+  },
+  'camera-lens': {
+    name: 'Camera d, lens',
+    idea: 'the body carries a round lens instead of a viewfinder: reads as a camera sooner, as a d later',
+    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="7" y="14" width="17" height="11" rx="3"/><rect class="a" x="19.5" y="6" width="4.5" height="19" rx="1.75"/><circle class="t" cx="13" cy="19.5" r="2.75"/>',
+    light: { t: INK, a: WASH },
+    dark: { t: PAPER, a: INK },
+  },
+  'camera-rig': {
+    name: 'Camera d, rig',
+    idea: 'the camera sits beside its mast with a hairline gap, like a camera on a dolly column',
+    body: '<rect class="t" width="32" height="32" rx="8"/><rect class="a" x="7" y="14" width="11.5" height="11" rx="3"/><rect class="a" x="19.5" y="6" width="4.5" height="19" rx="1.75"/><rect class="t" x="9.5" y="16.5" width="4.5" height="2.5" rx="1"/>',
     light: { t: INK, a: WASH },
     dark: { t: PAPER, a: INK },
   },
@@ -122,7 +122,7 @@ const html = `<!doctype html>
 <body>
 <main>
   <header>
-    <h1>Dolly: four marks</h1>
+    <h1>Dolly: a camera d</h1>
     <p>Each is two or three flat shapes on a 32 grid, in ink, paper and the wash. The files follow the browser: a light tab gets the light palette, a dark tab the dark one. The one marked current is <code>icon.svg</code>; change <code>CHOSEN</code> in <code>site/scripts/icons.mjs</code> and run <code>npm run icons:site</code> to switch.</p>
   </header>
 ${Object.entries(MARKS).map(([key, m]) => `  <section>
