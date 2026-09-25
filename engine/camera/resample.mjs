@@ -1,8 +1,8 @@
 /**
  * Lanczos crop-and-resize of packed RGB frames, ported from Pillow's
- * libImaging/Resample.c so a render matches what camera.py shipped, pixel
- * for pixel: the same float32 box, the same 22-bit fixed-point weights, the
- * same horizontal-then-vertical passes through an 8-bit intermediate.
+ * libImaging/Resample.c so a frame matches Pillow's, pixel for pixel: the
+ * same float32 box, the same 22-bit fixed-point weights, the same
+ * horizontal-then-vertical passes through an 8-bit intermediate.
  *
  * The box is fractional, which is what keeps a slow lean sub-pixel smooth.
  */

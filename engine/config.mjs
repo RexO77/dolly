@@ -29,7 +29,13 @@ export function listProjects(ws) {
     });
 }
 
-/** A project by name or alias, with every path resolved. */
+/**
+ * A project by name or alias, with its project.json, hooks, preset and
+ * every path resolved. `masters` and `out` move those folders for one run.
+ * @param {ReturnType<import('./workspace.mjs').loadWorkspace>} ws
+ * @param {string} name
+ * @param {{masters?: string, out?: string}} [options]
+ */
 export async function loadProject(ws, name, { masters, out } = {}) {
   const projects = listProjects(ws);
   const found = projects.find((p) => p.name === name || p.alias === name);
@@ -119,7 +125,13 @@ const META = {
   output: {},
 };
 
-/** A clip's scenario module, with its meta resolved against the project. */
+/**
+ * A clip: its scenario module (`setup`, the take, `direction` or `camera`),
+ * its meta resolved against the project, and the paths of its master, take
+ * file, camera file, render and poster. A clip with only a master loads too.
+ * @param {Awaited<ReturnType<typeof loadProject>>} project
+ * @param {string} name
+ */
 export async function loadClip(project, name) {
   const file = join(project.paths.scenarios, `${name}.mjs`);
   const mod = existsSync(file) ? await import(pathToFileURL(file).href) : {};

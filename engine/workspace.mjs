@@ -28,7 +28,12 @@ export function findRoot(from = process.cwd()) {
   }
 }
 
-/** Load a workspace; throws with the way out when there is none. */
+/**
+ * Load a workspace: `workspace` (or DOLLY_WORKSPACE) when given, else the
+ * nearest dolly.json at or above `cwd`. Throws, with the way out, when there is none.
+ * @param {{workspace?: string, cwd?: string}} [options]
+ * @returns {{root: string, config: object, paths: {projects: string, masters: string, out: string, tmp: string}, rel: (path: string) => string}}
+ */
 export function loadWorkspace({ workspace, cwd = process.cwd() } = {}) {
   const explicit = expand(workspace ?? process.env.DOLLY_WORKSPACE);
   const root = explicit ?? findRoot(cwd);

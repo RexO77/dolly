@@ -1,7 +1,7 @@
 /**
- * A clip's storyboard, read off what was actually shot: the take's beats,
+ * A clip's shot list, read off what was actually shot: the take's beats,
  * the camera's moves and the spotlights, on one timeline. Pure, so both
- * `dolly storyboard --text` and the storyboard page use it.
+ * `dolly studio --text` and the Studio use it.
  *
  *    0.00  camera  hold wide                              1.00s
  *    1.00  camera  lean in on trail, z 1.385              spring 1.20s

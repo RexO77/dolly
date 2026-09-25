@@ -1,4 +1,4 @@
-/* The resampler must match Pillow byte for byte: that is what keeps renders identical to what camera.py shipped. */
+/* The resampler must match Pillow byte for byte: that is what keeps every render identical to the Python renderer Dolly replaced. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

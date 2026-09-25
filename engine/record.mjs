@@ -134,7 +134,12 @@ async function takeOnce(project, clip, { log, query }) {
 
 /**
  * Record a clip: up to `takes` tries (default `meta.takes`, 1), logging
- * each rejected one. Returns the take.
+ * each rejected one. Writes the master and its take file, and returns the
+ * take: {beats, boxes, notes, url, viewport, master: {width, height, fps, duration}}.
+ * The product must already answer at `project.base` (see `ensureServer`).
+ * @param {object} project from `loadProject`
+ * @param {object} clip from `loadClip`
+ * @param {{log?: (line: string) => void, query?: Record<string, string>, takes?: number}} [options]
  */
 export async function record(project, clip, { log = console.log, query = {}, takes } = {}) {
   if (!clip.take) throw new Error(`${clip.name} has nothing to play: scenarios/${clip.name}.mjs needs a default export, the take`);
