@@ -28,3 +28,17 @@ A user's clips never live in this repo. They live in a workspace: a folder with 
 - Commit messages and PRs are written in the owner's voice, with no model attribution of any kind.
 - No em-dashes in anything authored here (copy, comments, docs). Use a colon, a period or a comma.
 - The Studio and the site follow Interface Craft: the storyboard pattern for motion, live controls, and a Design Critique pass before anything visual ships. Dolly's UI is its own: never copy another tool's components or look (the owner does not want Dolly read as a copy).
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on `RexO77/dolly`, through the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the root, made when a term or decision is settled. See `docs/agents/domain.md`. (`docs/agents.md`, beside that folder, is the guide for agents using Dolly, not these skills.)
