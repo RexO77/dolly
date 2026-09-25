@@ -13,16 +13,27 @@
  * `sync` re-times every beat by one real change: the first frame after the
  * beat where its box changes. `resync` pins single beats the same way, for
  * a beat a scenario can only notice late. `cut` takes out a stretch the
- * product really shows but a clip should not dwell on, with a crossfade;
- * beats after it move up, beats inside it land on the join.
+ * product really shows but a clip should not dwell on, with a crossfade.
  */
 import * as grammar from './camera/grammar.mjs';
 import { firstChange, firstPixel } from './retime.mjs';
 import { probe } from './ffmpeg.mjs';
 
-const r3 = (n) => Math.round(n * 1000) / 1000;
+const DEFAULT_CUT_FADE = 0.25;
+const round3 = (n) => Math.round(n * 1000) / 1000;
 
-/** The helpers a scenario's camera(take, tools) receives. */
+/**
+ * Where a moment of the master lands once `cut` has taken out `from` to
+ * `to`. Earlier moments keep their time. The crossfade ends at `from`, so a
+ * moment inside the cut, at its end or inside the crossfade lands there,
+ * and later ones move up by the cut and its fade. Order is always kept.
+ */
+export function afterCut(t, { from, to, fade }) {
+  if (t <= from) return t;
+  return Math.max(from, t - (to - from) - fade);
+}
+
+/** The helpers a scenario's `camera(take, tools)` receives. */
 export function tools(master, take) {
   const { duration, fps } = probe(master);
   return {
@@ -33,55 +44,65 @@ export function tools(master, take) {
     firstChange: (box, opts) => firstChange(master, box, opts),
     firstPixel: (point, test, opts) => firstPixel(master, point, test, opts),
     shots: (list, opts) => grammar.shots(list, { boxes: take.boxes, length: duration, ...opts }),
-    fromDirection: (direction) => fromDirection(master, take, direction),
+    fromDirection: (direction) => fromDirection(master, take, direction, { duration }),
   };
 }
 
-/** A spec from a declarative direction. Returns {spec, warnings, beats} with beats on the clip's final clock. */
-export async function fromDirection(master, take, { sync, resync = [], cut, shots }) {
-  const { beats, boxes } = take;
-  const { duration } = probe(master);
-  const warnings = [];
-  const need = (label) => {
-    if (!(label in beats)) throw new Error(`no beat "${label}" in the take (it has ${Object.keys(beats).join(', ') || 'none'})`);
-    return beats[label];
-  };
+/** A beat's time in the take, or an error that lists the beats there are. */
+function beatTime(beats, label) {
+  if (!(label in beats)) throw new Error(`the take has no beat "${label}" (it has ${Object.keys(beats).join(', ') || 'none'}); mark it with h.beat('${label}')`);
+  return beats[label];
+}
 
-  let offset = 0;
-  if (sync) {
-    const est = need(sync.beat);
-    const found = await firstChange(master, boxes[sync.box], { from: Math.max(0, est - 1), threshold: sync.threshold ?? 1.5 });
-    if (found < 0) throw new Error(`the sync box "${sync.box}" never changes after ${sync.beat}`);
-    offset = found - est;
-  }
+/** How far every beat moves so that `sync.beat` lands on the frame where `sync.box` really changes. */
+async function syncOffset(master, { beats, boxes }, sync) {
+  if (!sync) return 0;
+  const estimate = beatTime(beats, sync.beat);
+  const found = await firstChange(master, boxes[sync.box], { from: Math.max(0, estimate - 1), threshold: sync.threshold ?? 1.5 });
+  if (found < 0) throw new Error(`the sync box "${sync.box}" never changes after beat "${sync.beat}"; measure a box over what changes, or sync on another beat`);
+  return found - estimate;
+}
+
+/** Beats pinned one by one to the frame where their box changes. */
+async function pinBeats(master, { beats, boxes }, resync, offset) {
   const pinned = {};
-  for (const p of resync) {
-    const est = need(p.beat) + offset;
-    const found = await firstChange(master, boxes[p.box], { from: Math.max(0, est - (p.window ?? 2.5)), threshold: p.threshold ?? 2 });
-    if (found < 0) throw new Error(`${p.beat} never shows in "${p.box}"`);
-    pinned[p.beat] = found;
+  for (const pin of resync) {
+    const estimate = beatTime(beats, pin.beat) + offset;
+    const found = await firstChange(master, boxes[pin.box], { from: Math.max(0, estimate - (pin.window ?? 2.5)), threshold: pin.threshold ?? 2 });
+    if (found < 0) throw new Error(`beat "${pin.beat}" never shows in box "${pin.box}"; widen its window, or measure a box over what changes`);
+    pinned[pin.beat] = found;
   }
-  let at = (label) => (label in pinned ? pinned[label] : need(label) + offset);
+  return pinned;
+}
 
+/**
+ * A camera spec from a declarative direction. Returns {spec, warnings,
+ * beats, offset}, with the beats on the finished clip's clock.
+ */
+export async function fromDirection(master, take, { sync, resync = [], cut, shots }, { duration = probe(master).duration } = {}) {
+  const offset = await syncOffset(master, take, sync);
+  const pinned = await pinBeats(master, take, resync, offset);
+  const onMaster = (label) => (label in pinned ? pinned[label] : beatTime(take.beats, label) + offset);
+
+  let at = onMaster;
   let length = duration;
-  const source = {};
+  let source;
   if (cut) {
-    const a = r3(at(cut.from) + (cut.fromOffset ?? 0));
-    const b = r3(at(cut.to) + (cut.toOffset ?? 0));
-    const fade = cut.fade ?? 0.25;
-    source.cut = { from: a, to: b, fade };
-    const raw = at;
-    at = (label) => {
-      const t = raw(label);
-      if (t <= a) return t;
-      if (t < b) return a;
-      return t - (b - a) - fade;
+    const trimmed = {
+      from: round3(onMaster(cut.from) + (cut.fromOffset ?? 0)),
+      to: round3(onMaster(cut.to) + (cut.toOffset ?? 0)),
+      fade: cut.fade ?? DEFAULT_CUT_FADE,
     };
-    length = duration - (b - a) - fade;
+    source = { cut: trimmed };
+    at = (label) => afterCut(onMaster(label), trimmed);
+    length = duration - (trimmed.to - trimmed.from) - trimmed.fade;
   }
 
-  const built = grammar.shots(shots, { at, boxes, length });
-  warnings.push(...built.warnings);
-  const spec = { ...built.spec, ...(Object.keys(source).length ? { source } : {}) };
-  return { spec, warnings, beats: Object.fromEntries(Object.keys(beats).map((k) => [k, r3(at(k))])), offset: r3(offset) };
+  const built = grammar.shots(shots, { at, boxes: take.boxes, length });
+  return {
+    spec: source ? { ...built.spec, source } : built.spec,
+    warnings: built.warnings,
+    beats: Object.fromEntries(Object.keys(take.beats).map((label) => [label, round3(at(label))])),
+    offset: round3(offset),
+  };
 }
