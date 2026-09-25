@@ -108,6 +108,18 @@ export function deliver(project, clip, { overwrite = false } = {}) {
   return deliverFiles(files, dir, { overwrite });
 }
 
+/**
+ * `directedInStudio` for a status line: a camera file too broken to read
+ * is reported where it is used, so one bad file never hides a project's clips.
+ */
+function savedInStudio(clip) {
+  try {
+    return directedInStudio(clip);
+  } catch {
+    return false;
+  }
+}
+
 /** Where a clip stands: what exists, who directed its camera, and whether the render is older than what it is made from. */
 export function status(clip) {
   const mtime = (path) => (existsSync(path) ? statSync(path).mtimeMs : null);
@@ -119,7 +131,7 @@ export function status(clip) {
     master: Boolean(master),
     take: existsSync(clip.paths.take),
     camera: Boolean(camera),
-    studio: Boolean(camera) && directedInStudio(clip),
+    studio: savedInStudio(clip),
     directs: Boolean(clip.direction || clip.camera),
     rendered: Boolean(out),
     stale: Boolean(out && (out < master || (camera && out < camera))),

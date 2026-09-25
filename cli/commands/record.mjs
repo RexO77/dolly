@@ -27,6 +27,7 @@ export default async function record({ args: [name, ...patterns], flags, project
   try {
     await eachClip(clips, async (clipName) => {
       const clip = await loadClip(p, clipName);
+      log('  recording a take, in real time');
       const take = await recordTake(p, clip, { log, query: flags.query, takes });
       log(`  recorded ${p.workspace.rel(clip.paths.master)} (${take.master.width}x${take.master.height}, ${seconds(take.master.duration)})`);
       await directOne(p, clip, { redirect: flags.redirect });
