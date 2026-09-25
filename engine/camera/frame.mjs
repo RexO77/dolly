@@ -5,6 +5,7 @@
  */
 import { resample } from './resample.mjs';
 import { WASH, WASH_ALPHA, SPOT_RADIUS } from './grammar.mjs';
+import { compose } from './compose.mjs';
 
 /* Pillow's paste blend: (dst * (255 - m) + src * m) / 255, rounded its way. */
 const div255 = (v) => {
@@ -60,21 +61,27 @@ function wash(img, OW, OH, rect, level) {
  *   view    {x0, y0, vw, vh} from viewBox()
  *   spots   [{x, y, w, h, radius?, alpha}], rects as fractions of the source
  *   css     source pixels per CSS pixel (the capture's device pixel ratio)
+ *   frame   optional: {card, source, background} from card.mjs, to show the
+ *           picture as a card on a background. Without it, nothing changes.
  */
-export function renderFrame(src, W, H, OW, OH, view, spots = [], css = 2) {
+export function renderFrame(src, W, H, OW, OH, view, spots = [], css = 2, frame = null) {
   const { x0, y0, vw, vh } = view;
-  const out = resample(src, W, H, OW, OH, [x0, y0, x0 + vw, y0 + vh]);
-  const k = OW / vw;
+  /* On a frame, the camera's view is resampled straight to the card's size, at its exact place, so it stays sharp. */
+  const target = frame ? frame.source : { X: 0, Y: 0, IW: OW, IH: OH, box: [x0, y0, x0 + vw, y0 + vh] };
+  const img = resample(src, W, H, target.IW, target.IH, target.box);
+  const k = frame ? frame.card.w / vw : OW / vw;
+  const shiftX = frame ? frame.card.x - target.X : 0;
+  const shiftY = frame ? frame.card.y - target.Y : 0;
   for (const s of spots) {
     const level = Math.trunc(255 * WASH_ALPHA * s.alpha);
     if (level <= 0) continue;
-    wash(out, OW, OH, {
-      X: (s.x * W - x0) * k,
-      Y: (s.y * H - y0) * k,
+    wash(img, target.IW, target.IH, {
+      X: (s.x * W - x0) * k + shiftX,
+      Y: (s.y * H - y0) * k + shiftY,
       RW: s.w * W * k,
       RH: s.h * H * k,
       radius: (s.radius ?? SPOT_RADIUS) * css * k,
     }, level);
   }
-  return out;
+  return frame ? compose(img, target.IW, target.IH, target.X, target.Y, frame.card, frame.background, OW, OH) : img;
 }

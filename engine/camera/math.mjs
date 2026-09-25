@@ -190,6 +190,14 @@ export function checkSpec(spec) {
     if (!Number.isFinite(s.in)) errors.push(`spots[${i}] has no "in" time`);
     if (s.ring) warnings.push(`spots[${i}] asks for a ring; the grammar is wash only, so it is ignored`);
   });
+  const f = spec.frame;
+  if (f) {
+    const triple = (c) => Array.isArray(c) && c.length === 3 && c.every((v) => Number.isFinite(v) && v >= 0 && v <= 255);
+    if (typeof f.background === 'string' && !['dusk', 'ink', 'paper', 'wash'].includes(f.background)) errors.push(`frame.background is "${f.background}"; use dusk, ink, paper or wash, or {from, to} colours`);
+    if (f.background && typeof f.background === 'object' && !(triple(f.background.from) && triple(f.background.to))) errors.push('frame.background needs {from, to} as [r, g, b] with values 0 to 255');
+    if (f.inset !== undefined && !(f.inset >= 0.5 && f.inset <= 1)) errors.push(`frame.inset is ${f.inset}; keep it between 0.5 and 1`);
+    if (f.radius !== undefined && !(f.radius >= 0)) errors.push('frame.radius cannot be negative');
+  }
   const { cut, end } = spec.source;
   if (cut && !(cut.from < cut.to)) errors.push('source.cut needs from < to');
   if (end !== undefined && !(end > 0)) errors.push('source.end must be a positive time');

@@ -46,6 +46,27 @@ export const SPOT_RADIUS = 6;
 /** Master pixels per delivered pixel below which a lean is called soft: a 2% enlargement does not show, more than that blurs text. */
 export const SOFT_BELOW = 0.98;
 
+/*
+ * The frame: the clip shown as a card on a background, flat, with no
+ * perspective. Off unless a spec has a `frame`. Lengths are output pixels
+ * at 1920 wide and scale with the output.
+ */
+/** How much of the clip the card fills while the camera is wide. */
+export const CARD_INSET = 0.88;
+/** The card's corner radius while it sits on the background. */
+export const CARD_RADIUS = 16;
+/** The card's shadow: how dark, how soft, and how far below it falls. */
+export const CARD_SHADOW = { strength: 0.34, blur: 44, drop: 18 };
+/** The height of the browser window's title bar, when the card wears one. */
+export const WINDOW_BAR = 34;
+/** Backgrounds by name: a gradient from `from` (top left) to `to` (bottom right), and a soft vignette. */
+export const BACKDROPS = {
+  dusk: { from: [52, 48, 64], to: [17, 16, 22], vignette: 0.28 },
+  ink: { from: [36, 35, 41], to: [14, 13, 17], vignette: 0.22 },
+  paper: { from: [247, 246, 242], to: [226, 225, 219], vignette: 0.07 },
+  wash: { from: [248, 240, 228], to: [229, 214, 193], vignette: 0.1 },
+};
+
 const r3 = (n) => Math.round(n * 1000) / 1000;
 
 /**

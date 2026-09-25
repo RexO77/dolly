@@ -234,7 +234,7 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
           const clip = await loadClip(project, name);
           mkdirSync(project.paths.cameras, { recursive: true });
           /* Marked as directed by hand, so a re-record keeps it instead of rebuilding it from the scenario. */
-          const clean = { directed: 'studio', camera: spec.camera, spots: spec.spots, ...(Object.keys(spec.source).length ? { source: spec.source } : {}), ...(spec.beats ? { beats: spec.beats } : {}) };
+          const clean = { directed: 'studio', camera: spec.camera, spots: spec.spots, ...(Object.keys(spec.source).length ? { source: spec.source } : {}), ...(spec.beats ? { beats: spec.beats } : {}), ...(spec.frame ? { frame: spec.frame } : {}) };
           writeFileSync(clip.paths.camera, `${JSON.stringify(clean, null, 2)}\n`);
           log(`  saved ${project.workspace.rel(clip.paths.camera)}`);
           return send(res, 200, { saved: project.workspace.rel(clip.paths.camera), warnings });

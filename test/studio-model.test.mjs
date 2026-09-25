@@ -199,3 +199,16 @@ test('across a cut the preview crossfades over the fade, the way the render does
   assert.equal(c.masterTime(3.9), 6.4);
 });
 
+
+test('a frame goes on, changes, undoes, and comes off', () => {
+  const c = walk();
+  assert.equal(c.look, null);
+  c.setFrame({ background: 'dusk' });
+  assert.equal(c.look.inset > 0.5, true);
+  c.setFrame({ window: true });
+  assert.equal(c.look.window, true);
+  c.undo();
+  assert.equal(c.look.window, false);
+  c.removeFrame();
+  assert.equal(c.spec.frame, undefined);
+});

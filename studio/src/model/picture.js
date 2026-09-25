@@ -7,6 +7,8 @@
  */
 import { viewBox, spotAlpha } from '../../../engine/camera/math.mjs';
 import { WASH, WASH_ALPHA, SPOT_RADIUS } from '../../../engine/camera/grammar.mjs';
+import { cardAt } from '../../../engine/camera/card.mjs';
+import { WINDOW } from '../../../engine/camera/compose.mjs';
 
 const masterUrl = (clip) => `/media/master/${encodeURIComponent(clip.name)}.mp4`;
 
@@ -173,12 +175,13 @@ export class Transport {
   }
 }
 
-function wash(c, X, Y, RW, RH, radius, alpha, W, H) {
+/** Wash the rect `bounds` [x, y, w, h] except one rounded rect. */
+function wash(c, X, Y, RW, RH, radius, alpha, bounds) {
   const level = Math.trunc(255 * WASH_ALPHA * alpha) / 255;
   if (level <= 0) return;
   c.save();
   c.beginPath();
-  c.rect(0, 0, W, H);
+  c.rect(...bounds);
   c.roundRect(X, Y, RW, RH, Math.max(0, Math.min(radius, RW / 2, RH / 2)));
   c.fillStyle = `rgba(${WASH.join(',')},${level})`;
   c.fill('evenodd');
@@ -200,17 +203,86 @@ function drawSource(c, clip, t, video, fade, draw) {
   c.restore();
 }
 
-/** The frame as delivered at t. `fade` is the far side of a cut, if the clip has one. */
+const rgb = (c, a = 1) => `rgba(${c.join(',')},${a})`;
+
+/**
+ * The frame's background behind the card at one moment: the gradient along
+ * the output's diagonal, the vignette, the shadow and the browser bar, drawn
+ * as the renderer's compose.mjs draws them.
+ */
+function drawBackdrop(c, look, card, W, H) {
+  const { from, to, vignette } = look.background;
+  const g = c.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, rgb(from));
+  g.addColorStop(1, rgb(to));
+  c.fillStyle = g;
+  c.fillRect(0, 0, W, H);
+  if (vignette > 0) {
+    const R = Math.hypot(W, H) / 2;
+    const v = c.createRadialGradient(W / 2, H / 2, R * 0.35, W / 2, H / 2, R);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, `rgba(0,0,0,${vignette})`);
+    c.fillStyle = v;
+    c.fillRect(0, 0, W, H);
+  }
+  const top = card.y - card.bar;
+  if (card.shadow.alpha > 0.002) {
+    c.save();
+    c.filter = `blur(${card.shadow.blur / 2}px)`;
+    c.fillStyle = `rgba(0,0,0,${card.shadow.alpha})`;
+    c.beginPath();
+    c.roundRect(card.x, top + card.shadow.drop, card.w, card.h + card.bar, card.radius);
+    c.fill();
+    c.restore();
+  }
+  if (card.bar > 0.5) {
+    const { bar } = card;
+    c.save();
+    c.beginPath();
+    c.roundRect(card.x, top, card.w, bar + card.radius + 1, [card.radius, card.radius, 0, 0]);
+    c.clip();
+    c.fillStyle = rgb(WINDOW.bar);
+    c.fillRect(card.x, top, card.w, bar);
+    c.fillStyle = rgb(WINDOW.dot);
+    for (let i = 0; i < 3; i += 1) {
+      c.beginPath();
+      c.arc(card.x + bar * 0.62 + i * bar * 0.56, top + bar / 2, bar * 0.17, 0, Math.PI * 2);
+      c.fill();
+    }
+    const fw = Math.min(card.w * 0.34, bar * 14);
+    const fh = bar * 0.52;
+    c.fillStyle = rgb(WINDOW.field);
+    c.beginPath();
+    c.roundRect(card.x + (card.w - fw) / 2, top + (bar - fh) / 2, fw, fh, fh / 2);
+    c.fill();
+    c.fillStyle = rgb(WINDOW.edge, 0.8);
+    c.fillRect(card.x, card.y - 1, card.w, 1);
+    c.restore();
+  }
+}
+
+/** The frame as delivered at t. `fade` is the far side of a cut, if the clip has one. On a frame, the picture is a card on its background. */
 export function drawDelivered(c, video, clip, t, OW, OH, fade = null) {
   const { master, css } = clip.info;
   const v = viewBox(master.width, master.height, OW, OH, clip.view(t));
+  const look = clip.look;
+  const card = look ? cardAt(look, clip.spec.camera, t, OW, OH) : { x: 0, y: 0, w: OW, h: OH };
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
-  drawSource(c, clip, t, video, fade, (src) => c.drawImage(src, v.x0, v.y0, v.vw, v.vh, 0, 0, OW, OH));
-  const k = OW / v.vw;
-  for (const s of clip.spec.spots) {
-    wash(c, (s.x * master.width - v.x0) * k, (s.y * master.height - v.y0) * k, s.w * master.width * k, s.h * master.height * k, (s.radius ?? SPOT_RADIUS) * css * k, spotAlpha(s, t), OW, OH);
+  c.save();
+  if (look) {
+    drawBackdrop(c, look, card, OW, OH);
+    const r = card.radius;
+    c.beginPath();
+    c.roundRect(card.x, card.y, card.w, card.h, card.bar > 0.5 ? [0, 0, r, r] : r);
+    c.clip();
   }
+  drawSource(c, clip, t, video, fade, (src) => c.drawImage(src, v.x0, v.y0, v.vw, v.vh, card.x, card.y, card.w, card.h));
+  const k = card.w / v.vw;
+  for (const s of clip.spec.spots) {
+    wash(c, card.x + (s.x * master.width - v.x0) * k, card.y + (s.y * master.height - v.y0) * k, s.w * master.width * k, s.h * master.height * k, (s.radius ?? SPOT_RADIUS) * css * k, spotAlpha(s, t), [card.x, card.y, card.w, card.h]);
+  }
+  c.restore();
   return v;
 }
 
@@ -232,7 +304,7 @@ export function drawScreen(c, video, clip, t, w, h, view = clip.view(t), fade = 
     c.beginPath();
     c.rect(ox, oy, master.width * k, master.height * k);
     c.clip();
-    wash(c, ox + s.x * master.width * k, oy + s.y * master.height * k, s.w * master.width * k, s.h * master.height * k, (s.radius ?? SPOT_RADIUS) * css * k, spotAlpha(s, t), w, h);
+    wash(c, ox + s.x * master.width * k, oy + s.y * master.height * k, s.w * master.width * k, s.h * master.height * k, (s.radius ?? SPOT_RADIUS) * css * k, spotAlpha(s, t), [0, 0, w, h]);
     c.restore();
   }
   const v = viewBox(master.width, master.height, output.width, output.height, view);

@@ -7,6 +7,7 @@
 import { cameraAt, resolve, normalizeSpec, checkSpec } from '../../../engine/camera/math.mjs';
 import { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE } from '../../../engine/camera/grammar.mjs';
 import { segments, directorsNotes, boxName } from '../../../engine/storyboard.mjs';
+import { resolveFrame } from '../../../engine/camera/card.mjs';
 import { clipLength } from './project.js';
 
 export { LEAN_Z, SPRING, SETTLE, ESTABLISH, SPRING_CURVE, SMOOTH_CURVE, resolve, boxName };
@@ -370,6 +371,27 @@ export class Clip {
       s.camera.push(start, { t: t1, ...land });
     }, { tidy: true });
     return this.shots.find((sh) => Math.abs(sh.t0 - t0) < 0.01 && sh.kind !== 'hold') ?? null;
+  }
+
+  /* ── The frame: the clip as a card on a background, flat ── */
+
+  /** The frame with its defaults, or null when the clip has none. */
+  get look() {
+    return resolveFrame(this.spec.frame);
+  }
+
+  /** Put the clip in a frame (with `patch`), or change the frame it has. */
+  setFrame(patch, opts) {
+    this.edit((s) => {
+      s.frame = { ...(s.frame ?? {}), ...patch };
+    }, opts);
+  }
+
+  /** Take the frame away: the picture fills the clip again. */
+  removeFrame() {
+    this.edit((s) => {
+      delete s.frame;
+    });
   }
 
   /** Remove a move: the camera stays where it was, so the move becomes part of the hold around it. */

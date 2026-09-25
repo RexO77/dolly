@@ -63,10 +63,15 @@ Dolly starts the product's dev server when it needs it and stops it afterwards. 
 
 `dolly studio <project> [clip]` opens the Studio at `http://localhost:4800`. It plays the real take through the camera live, with the same code the renderer uses, so what you see is what renders.
 
+- It opens on every clip in the project, each with a real frame, where it stands in plain words, and its one next step: a button, or the exact command to copy.
+
 - The clip reads as a shot list: establish, lean in, hold, pull back. Each shot shows the real frame it will show. Open one and it plays on repeat, and every change replays it.
 - Retime by dragging the edge between two shots on the film strip. Edges snap to the take's beats; hold Shift to drag freely.
 - Frame a shot by dragging its frame over the picture, or pick a box the take measured by name.
+- Zoom on a lens barrel you roll: it clicks into wide and the 1.35 lean, and its marks turn amber past the point where the take goes soft.
 - If a move runs through a change, or past a beat, a note says so and offers the fix in one click.
+- Put the clip in a frame: a card on a background, in a browser window if you like, that grows to fill the clip as the camera leans in.
+- Every action has a quiet sound, from the lens ticking to two soft bells when a render finishes. The speaker in the bar turns them off.
 - **Save** writes the clip's camera. **Render** makes the clip and shows it beside the preview. A camera you saved stays yours: recording again keeps it.
 
 ### With an agent: the CLI and the skill
@@ -138,7 +143,7 @@ Every clip follows one direction, with its numbers in one place (`engine/camera/
 3. **Let it play.** The camera keeps still while the product changes.
 4. **Pull back and hold.** Spring back to wide and hold, so the result is seen in context.
 
-The spotlight is a wash: a warm paper colour at 72% over everything but the subject. There is no ring and no cursor. See [docs/camera.md](docs/camera.md).
+The spotlight is a wash: a warm paper colour at 72% over everything but the subject. There is no ring and no cursor. A clip can also sit in a frame: a card on a background that grows to fill the clip as the camera leans in. See [docs/camera.md](docs/camera.md).
 
 ## Docs
 

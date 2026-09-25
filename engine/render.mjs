@@ -18,6 +18,7 @@ import { dirname } from 'node:path';
 import { cameraAt, viewBox, spotAlpha, normalizeSpec, checkSpec } from './camera/math.mjs';
 import { resample } from './camera/resample.mjs';
 import { renderFrame } from './camera/frame.mjs';
+import { resolveFrame, cardAt, cardSource } from './camera/card.mjs';
 import { probe, frameCount, decodeFrames, encoder, writeWebp, requireTools } from './ffmpeg.mjs';
 
 const DEFAULT_CUT_FADE = 0.25;
@@ -41,11 +42,14 @@ export function outputSize(master, { width, size }) {
   return { width, height: Math.round((width * master.height) / master.width / 2) * 2 };
 }
 
-/** What the camera shows at `t`: its crop of the master, and the washes lit enough to see. */
+/** What the camera shows at `t`: its crop of the master, the washes lit enough to see, and where the card sits when the clip has a frame. */
 function shotAt(spec, t, W, H, OW, OH) {
   const view = viewBox(W, H, OW, OH, cameraAt(spec.camera, t));
   const spots = spec.spots.map((s) => ({ ...s, alpha: spotAlpha(s, t) })).filter((s) => s.alpha > UNSEEN_WASH);
-  return { view, spots };
+  const look = resolveFrame(spec.frame);
+  if (!look) return { view, spots, frame: null };
+  const card = cardAt(look, spec.camera, t, OW, OH);
+  return { view, spots, frame: { card, source: cardSource(card, view), background: look.background } };
 }
 
 /** A delivered frame (OW x OH) as the poster: `width` wide, WebP at `quality`. */
@@ -152,8 +156,8 @@ export async function render({ master, spec, out, width = 1920, size, crf = 20, 
     frames = await decodeFrames(master, { width: W, height: H, filter: cutFilter(cut), end }, async (frame, i) => {
       while (i - written >= ahead) await nextWrite();
       if (failures.length) throw failures[0];
-      const { view, spots } = shotAt(spec, i / fps, W, H, OW, OH);
-      pool.run(i, { src: frame.buffer, W, H, OW, OH, view, spots, css })
+      const shot = shotAt(spec, i / fps, W, H, OW, OH);
+      pool.run(i, { src: frame.buffer, W, H, OW, OH, ...shot, css })
         .then((result) => {
           finished.set(i, result);
           writing = writing.then(writeReady);
@@ -196,8 +200,8 @@ export async function renderStill({ master, spec, t, width = 1920, size, css = 2
   });
   if (!last) throw new Error(`${master} has no frames to take a poster from`);
   const at = lastIndex / fps;
-  const { view, spots } = shotAt(spec, at, W, H, OW, OH);
-  return { frame: renderFrame(last, W, H, OW, OH, view, spots, css), width: OW, height: OH, t: at };
+  const shot = shotAt(spec, at, W, H, OW, OH);
+  return { frame: renderFrame(last, W, H, OW, OH, shot.view, shot.spots, css, shot.frame), width: OW, height: OH, t: at };
 }
 
 /** A poster from one moment of the clip (seconds on its clock), without rendering the clip. */

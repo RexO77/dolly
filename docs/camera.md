@@ -96,3 +96,23 @@ Why 1.35: it is as far as a lean can go before text softens and the product lose
 ## Sharpness
 
 A lean crops the master. At 1.35 on a 2880-wide master delivered at 1920, the crop is 2133 master pixels wide: still more than one master pixel per delivered pixel, so the lean stays sharp. Record at 2x (a retina display) for this to hold. The Studio reports the tightest lean's ratio, and warns when it drops below 1.
+
+## Frame
+
+A frame shows the clip as a card on a background, flat: no perspective, nothing recorded again. While the camera is wide the card sits back on the background; as the camera leans in, the card grows until it fills the clip edge to edge, so the lean feels like moving up to the screen, and it settles back as the camera pulls out. The picture is resampled straight to the card's size, so it stays as sharp as a clip without one.
+
+```json
+"frame": { "background": "dusk", "window": true }
+```
+
+| Key | Default | What it does |
+| --- | --- | --- |
+| `background` | `"dusk"` | `dusk`, `ink`, `paper` or `wash`, or `{ "from": [r, g, b], "to": [r, g, b], "vignette": 0.2 }`: a gradient from the top left to the bottom right |
+| `window` | `false` | a plain browser window around the product: three dots and an address field |
+| `inset` | `0.88` | how much of the clip the card fills while the camera is wide |
+| `push` | `true` | grow the card to fill the clip as the camera leans in; `false` keeps it still |
+| `radius` | `16` | the card's corner radius, in output pixels at 1920 wide |
+| `shadow` | `{ "strength": 0.34, "blur": 44, "drop": 18 }` | the card's soft shadow |
+
+In the Studio it is the Frame section, under the washes. A clip without a `frame` renders exactly as before.
+

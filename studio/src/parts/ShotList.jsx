@@ -10,6 +10,7 @@ import { Button } from '../ui/controls.jsx';
 import { Notes } from './Notes.jsx';
 import { ShotRow } from './ShotRow.jsx';
 import { Washes } from './Washes.jsx';
+import { FrameSection } from './FrameSection.jsx';
 
 /** The moment each shot's thumbnail shows: a little into a hold, the landing of a move. */
 const thumbTime = (s) => (s.kind === 'hold' ? s.t0 + Math.min(0.4, (s.t1 - s.t0) / 2) : s.t1 - 0.02);
@@ -81,6 +82,7 @@ export function ShotList({ clip, transport, selectedId, onSelect, onFrame, onSay
         ))}
       </ol>
       <Washes clip={clip} transport={transport} />
+      <FrameSection clip={clip} />
     </section>
   );
 }
