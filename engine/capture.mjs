@@ -57,7 +57,7 @@ export async function startCapture(page, { dir, width, height, dpr, quality = 95
  * first frame starts the clip; the last holds until the capture stopped.
  */
 export function stitch({ frames, endAt }, dir, out, { fps = 30, crf = 14, x264 = 'medium' } = {}) {
-  if (!frames.length) throw new Error('no frames captured');
+  if (!frames.length) throw new Error('Chrome sent no frames during the take, so there is no master to write; check the page draws at all with dolly inspect');
   const lines = ['ffconcat version 1.0'];
   let total = 0;
   frames.forEach((f, i) => {

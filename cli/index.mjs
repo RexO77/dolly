@@ -99,7 +99,7 @@ process.stdout.on('error', (error) => {
 try {
   await main(process.argv.slice(2));
 } catch (error) {
-  console.error(`dolly${error.command ? ` ${error.command}` : ''}: ${error.message}`);
-  if (process.env.DOLLY_DEBUG) console.error(error.stack);
-  process.exitCode = 1;
+  const message = `dolly${error.command ? ` ${error.command}` : ''}: ${error.message}\n${process.env.DOLLY_DEBUG ? `${error.stack}\n` : ''}`;
+  /* Exit once the message is out, even if something the command started (a dev server for the Studio, say) is still holding on. */
+  process.stderr.write(message, () => process.exit(1));
 }
