@@ -1,0 +1,75 @@
+/*
+ * Dolly's visual system. Neutral and monochrome: surfaces are alpha layers
+ * over the canvas, text steps down in opacity, and colour appears only where
+ * it means something (the wash, and a note that needs you).
+ */
+:root {
+  color-scheme: light;
+  --canvas: oklch(0.975 0 0);
+  --panel: oklch(0.995 0 0);
+  --ink: 0 0 0;
+  --text-1: rgb(var(--ink) / 0.88);
+  --text-2: rgb(var(--ink) / 0.62);
+  --text-3: rgb(var(--ink) / 0.48);
+  --text-4: rgb(var(--ink) / 0.3);
+  --surface: rgb(var(--ink) / 0.04);
+  --surface-2: rgb(var(--ink) / 0.065);
+  --hover: rgb(var(--ink) / 0.085);
+  --active: rgb(var(--ink) / 0.12);
+  --line: rgb(var(--ink) / 0.08);
+  --line-2: rgb(var(--ink) / 0.14);
+  --focus: rgb(var(--ink) / 0.55);
+  --primary-bg: oklch(0.22 0 0);
+  --primary-fg: oklch(0.99 0 0);
+  --wash: oklch(0.9 0.035 78);
+  --wash-line: oklch(0.72 0.06 72);
+  --note: oklch(0.62 0.15 62);
+  --note-bg: oklch(0.62 0.15 62 / 0.1);
+  --scrim: rgb(20 20 20 / 0.5);
+  --shadow-panel: 0 0 0 1px rgb(var(--ink) / 0.06), 0 1px 2px rgb(var(--ink) / 0.04), 0 8px 24px -6px rgb(var(--ink) / 0.1);
+  --shadow-float: 0 0 0 1px rgb(var(--ink) / 0.07), 0 2px 6px rgb(var(--ink) / 0.06), 0 16px 40px -8px rgb(var(--ink) / 0.18);
+
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  --text-xs: 11px;
+  --text-s: 12px;
+  --text-m: 13px;
+  --text-l: 15px;
+  --weight: 500;
+  --weight-strong: 600;
+
+  --radius: 8px;
+  --radius-s: 6px;
+  --row: 36px;
+  --gap: 6px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-move: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --canvas: oklch(0.155 0 0);
+    --panel: oklch(0.19 0 0);
+    --ink: 255 255 255;
+    --text-1: rgb(var(--ink) / 0.94);
+    --text-2: rgb(var(--ink) / 0.68);
+    --text-3: rgb(var(--ink) / 0.52);
+    --text-4: rgb(var(--ink) / 0.34);
+    --surface: rgb(var(--ink) / 0.05);
+    --surface-2: rgb(var(--ink) / 0.075);
+    --hover: rgb(var(--ink) / 0.1);
+    --active: rgb(var(--ink) / 0.14);
+    --line: rgb(var(--ink) / 0.08);
+    --line-2: rgb(var(--ink) / 0.14);
+    --focus: rgb(var(--ink) / 0.6);
+    --primary-bg: oklch(0.96 0 0);
+    --primary-fg: oklch(0.18 0 0);
+    --wash-line: oklch(0.86 0.05 78);
+    --note: oklch(0.8 0.13 72);
+    --note-bg: oklch(0.8 0.13 72 / 0.12);
+    --scrim: rgb(0 0 0 / 0.55);
+    --shadow-panel: 0 0 0 1px rgb(255 255 255 / 0.07);
+    --shadow-float: 0 0 0 1px rgb(255 255 255 / 0.09), 0 16px 40px -8px rgb(0 0 0 / 0.6);
+  }
+}

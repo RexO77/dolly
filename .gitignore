@@ -1,0 +1,10 @@
+node_modules/
+.dolly/
+.DS_Store
+# A workspace inside the repo (examples/) keeps its takes and renders out of git.
+examples/*/masters/
+examples/*/out/
+# Local editor and agent state.
+.claude/
+# Built at publish time (npm run build:studio).
+studio/dist/

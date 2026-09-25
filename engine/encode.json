@@ -1,0 +1,14 @@
+{
+  "web-1920": {
+    "width": 1920,
+    "crf": 20,
+    "x264": "slow",
+    "poster": { "width": 1440, "quality": 85 }
+  },
+  "master": {
+    "fps": 30,
+    "crf": 14,
+    "x264": "medium",
+    "jpeg": 95
+  }
+}

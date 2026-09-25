@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: ${{ matrix.os }}, Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        node: [22, 24]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install ffmpeg and cwebp (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg webp
+
+      - name: Install ffmpeg and cwebp (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg webp
+
+      - name: Install pnpm and yarn
+        run: npm install -g pnpm@10 yarn@1
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+
+      - name: Pack, and check what ships
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          TGZ=$(ls "$RUNNER_TEMP"/nischalskanda-dolly-*.tgz)
+          echo "TGZ=$TGZ" >> "$GITHUB_ENV"
+          tar tzf "$TGZ" | sort
+          if tar tzf "$TGZ" | grep -E '^package/(legacy|test|examples|\.claude)/'; then
+            echo "The tarball ships files it must not." && exit 1
+          fi
+          tar tzf "$TGZ" | grep -qx 'package/bin/dolly.mjs'
+
+      # Every install runs from an empty folder, outside any workspace and outside this repo.
+      - name: npm, global and per workspace
+        run: |
+          cd "$(mktemp -d)"
+          npm install -g --prefix "$RUNNER_TEMP/npm-global" "$TGZ"
+          "$RUNNER_TEMP/npm-global/bin/dolly" --help
+          "$RUNNER_TEMP/npm-global/bin/dolly" doctor
+          npm init -y > /dev/null && npm install -D "$TGZ"
+          npx dolly --help
+
+      - name: pnpm, global and per workspace
+        env:
+          PNPM_HOME: ${{ runner.temp }}/pnpm-home
+        run: |
+          cd "$(mktemp -d)"
+          export PATH="$PNPM_HOME:$PATH"
+          pnpm add -g "$TGZ"
+          "$PNPM_HOME/dolly" --help
+          npm init -y > /dev/null && pnpm add -D "$TGZ"
+          pnpm exec dolly --help
+
+      - name: yarn, global and per workspace
+        run: |
+          cd "$(mktemp -d)"
+          yarn global add "$TGZ" --prefix "$RUNNER_TEMP/yarn-global"
+          "$RUNNER_TEMP/yarn-global/bin/dolly" --help
+          npm init -y > /dev/null && yarn add -D "$TGZ"
+          yarn --silent dolly --help
+
+      - name: bun, global and per workspace
+        env:
+          BUN_INSTALL: ${{ runner.temp }}/bun-home
+        run: |
+          cd "$(mktemp -d)"
+          bun add -g "$TGZ"
+          "$BUN_INSTALL/bin/dolly" --help
+          npm init -y > /dev/null && bun add -d "$TGZ"
+          bunx dolly --help
