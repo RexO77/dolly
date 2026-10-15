@@ -39,8 +39,13 @@ export async function launchHeadless(options = {}) {
   }
 }
 
-/** A real Chrome window off screen, with a throwaway profile. Returns {context, page, close()}. */
-export async function openBrowser({ width, height }) {
+/**
+ * A real Chrome window off screen, with a throwaway profile. Returns {context, page, close()}.
+ * `dpr` renders the page at that pixel ratio whatever the display's is, so a
+ * take is as sharp on any machine (a launch film's close-ups want 4); `colorScheme`
+ * is what the page sees for prefers-color-scheme.
+ */
+export async function openBrowser({ width, height, dpr, colorScheme = 'light' }) {
   const profile = mkdtempSync(join(tmpdir(), 'dolly-'));
   let context;
   try {
@@ -48,9 +53,11 @@ export async function openBrowser({ width, height }) {
       ...launchOptions(),
       headless: false,
       viewport: null,
+      colorScheme,
       ignoreDefaultArgs: ['--enable-automation'],
       args: [
         '--hide-scrollbars',
+        ...(dpr ? [`--force-device-scale-factor=${dpr}`] : []),
         '--window-position=-4000,0',
         `--window-size=${width},${height + 150}`,
         '--disable-backgrounding-occluded-windows',

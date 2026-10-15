@@ -4,7 +4,7 @@
  * Everything random comes from one seed, so a retake repeats the same
  * performance. It shares the mouse position and the clock with `h`.
  */
-import { ease, seeded, sleep } from './motion.mjs';
+import { ease, seeded, sleep, elapsed } from './motion.mjs';
 
 /**
  * Where a bent path's control point sits: given outright, a bow as a share
@@ -39,7 +39,7 @@ export function hand(h, { seed = 1, curve = ease.reach(), maxBow } = {}) {
     const to = { x: from.x + rng.between(-1.1, 1.1), y: from.y + rng.between(-0.7, 0.7) };
     const began = performance.now();
     for (;;) {
-      const u = Math.min(1, (performance.now() - began) / Math.max(ms, 1));
+      const u = Math.min(1, elapsed(began) / Math.max(ms, 1));
       const e = ease.even(u);
       await page.mouse.move(from.x + (to.x - from.x) * e, from.y + (to.y - from.y) * e);
       if (u >= 1) break;

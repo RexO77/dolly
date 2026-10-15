@@ -15,7 +15,7 @@ import { clipUrl, presets } from './config.mjs';
 import { openBrowser, fitWindow } from './browser.mjs';
 import { startCapture, stitch } from './capture.mjs';
 import { helpers } from './input.mjs';
-import { sleep } from './motion.mjs';
+import { sleep, tempo } from './motion.mjs';
 import { probe, requireTools } from './ffmpeg.mjs';
 import { writeJson } from './files.mjs';
 
@@ -46,6 +46,36 @@ function watchReloads(page) {
   return watch;
 }
 
+/**
+ * Slow the product down `slow` times for the length of the take: its CSS
+ * animations and transitions through Chrome's playback rate, and its timers
+ * and animation frames through a page clock driven at the same rate. The
+ * hand slows with it (through `tempo`). Returns a function that undoes it.
+ */
+async function slowDown(page, slow) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Animation.enable');
+  await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 / slow });
+  await page.clock.pauseAt(await page.evaluate(() => Date.now()));
+  let running = true;
+  const STEP = 8;
+  const drive = (async () => {
+    while (running) {
+      await page.clock.runFor(STEP / slow).catch(() => undefined);
+      await new Promise((resolve) => setTimeout(resolve, STEP));
+    }
+  })();
+  tempo.slow = slow;
+  return async () => {
+    tempo.slow = 1;
+    running = false;
+    await drive;
+    await cdp.send('Animation.setPlaybackRate', { playbackRate: 1 }).catch(() => undefined);
+    await cdp.detach().catch(() => undefined);
+    await page.clock.resume().catch(() => undefined);
+  };
+}
+
 /** Load the clip's page and put it in its opening state, off camera. Returns the window's real size and pixel ratio. */
 async function openScene(page, h, project, clip, url, log) {
   const { meta } = clip;
@@ -67,12 +97,13 @@ async function openScene(page, h, project, clip, url, log) {
 }
 
 /** Stitch the captured frames into the master, keeping the one it replaces. */
-function writeMaster(project, clip, captured, frameDir, log) {
+function writeMaster(project, clip, captured, frameDir, log, { slow = 1 } = {}) {
   mkdirSync(project.paths.masters, { recursive: true });
   const kept = archive(clip.paths);
   if (kept) log(`  kept the previous master as ${project.workspace.rel(kept)}`);
   const stitched = join(frameDir, 'master.mp4');
-  stitch(captured, frameDir, stitched, presets.master);
+  /* A slow-motion take has frames to spare: keep them, at 60 a second. */
+  stitch(captured, frameDir, stitched, { ...presets.master, slow, fps: slow > 1 ? 60 : presets.master.fps });
   renameSync(stitched, clip.paths.master);
   return probe(clip.paths.master);
 }
@@ -81,7 +112,7 @@ async function takeOnce(project, clip, { log, query }) {
   const { meta } = clip;
   const viewport = { width: meta.viewport.width, height: meta.viewport.height };
   const frameDir = join(project.paths.tmp, 'frames', clip.name);
-  const browser = await openBrowser(viewport);
+  const browser = await openBrowser({ ...viewport, dpr: meta.viewport.dpr, colorScheme: meta.colorScheme });
   const { page } = browser;
   const take = { project: project.name, clip: clip.name, beats: {}, boxes: {}, notes: [] };
   const h = helpers(page, viewport, take);
@@ -90,9 +121,13 @@ async function takeOnce(project, clip, { log, query }) {
   const reloads = watchReloads(page);
   try {
     const url = clipUrl(project, meta, query);
+    const slow = meta.slow ?? 1;
+    /* The page's clock has to be in place before its scripts run, so a slow take installs it before loading. */
+    if (slow > 1) await page.clock.install();
     const fit = await openScene(page, h, project, clip, url, log);
 
     const capture = await startCapture(page, { dir: frameDir, ...viewport, dpr: fit.dpr, quality: presets.master.jpeg });
+    const undoSlow = slow > 1 ? await slowDown(page, slow) : null;
     h.clock.zero = capture.zero;
     reloads.on = true;
     let captured;
@@ -103,12 +138,13 @@ async function takeOnce(project, clip, { log, query }) {
     } finally {
       reloads.on = false;
       captured = await capture.stop();
+      await undoSlow?.();
     }
     if (reloads.seen.length && !meta.allowReload) {
       throw new Error(`the product reloaded during the take (${reloads.seen.join(' | ')}); record again once nothing is editing its files, or set meta.allowReload`);
     }
 
-    const { width, height, duration, fps } = writeMaster(project, clip, captured, frameDir, log);
+    const { width, height, duration, fps } = writeMaster(project, clip, captured, frameDir, log, { slow });
     Object.assign(take, {
       recordedAt: new Date().toISOString(),
       url,
@@ -116,6 +152,7 @@ async function takeOnce(project, clip, { log, query }) {
       master: { width, height, fps, duration: Math.round(duration * 1000) / 1000, frames: captured.frames.length },
       leadMs: meta.leadMs,
       tailMs: meta.tailMs,
+      ...(slow > 1 ? { slow } : {}),
     });
     writeJson(clip.paths.take, take);
     return take;

@@ -15,7 +15,7 @@
  * (within a frame or two; `direction.sync` reads the exact frame off the master).
  */
 import * as grammar from './camera/grammar.mjs';
-import { ease, seeded, sleep } from './motion.mjs';
+import { ease, seeded, sleep, elapsed } from './motion.mjs';
 import { hand } from './hand.mjs';
 
 /** A rect {x, y, w, h} in CSS px as fractions of the viewport, padded by `pad` px: the boxes the camera takes. */
@@ -60,7 +60,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
   const clock = { zero: null };
 
   /** Seconds on the master's timeline. Before the capture starts, seconds since setup began. */
-  const now = () => (performance.now() - (clock.zero ?? clock.setup ?? performance.now())) / 1000;
+  const now = () => elapsed(clock.zero ?? clock.setup ?? performance.now()) / 1000;
 
   /** Move the mouse in one event and remember where it is. */
   const move = async (x, y) => {
@@ -75,7 +75,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
     const through = ctrl ?? { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
     const began = performance.now();
     for (;;) {
-      const u = Math.min(1, (performance.now() - began) / Math.max(ms, 1));
+      const u = Math.min(1, elapsed(began) / Math.max(ms, 1));
       const e = curve(u);
       const a = (1 - e) * (1 - e);
       const b = 2 * (1 - e) * e;

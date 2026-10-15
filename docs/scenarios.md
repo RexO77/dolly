@@ -53,7 +53,9 @@ The camera's times in the storyboard come from the grammar: a lean starts `h.gra
 | `leadMs` | `700` | still time at the start of the take, before the scenario's first move |
 | `tailMs` | `1400` | still time after the scenario returns: the final wide hold |
 | `takes` | `1` | how many tries the clip gets in all before recording gives up (`dolly record --takes N` overrides it) |
-| `viewport` | the project's | `{width, height, dpr}` for this clip |
+| `viewport` | the project's | `{width, height, dpr}` for this clip. The page renders at `dpr` whatever the display's pixel ratio; a launch film's close-ups want 4 |
+| `colorScheme` | `'light'` | what the page sees for `prefers-color-scheme`: `'light'` or `'dark'` |
+| `slow` | `1` | record in slow motion: the product, its timers and the hand run this many times slower, and the master plays back at speed with that many times the frames (at 60 a second). A launch take at `dpr` 4 wants `slow: 4` |
 | `query` | the project's | query parameters, merged over the project's; `false` drops the project's |
 | `poster` | the last frame | seconds into the clip to take the poster from |
 | `deliver` | `'default'` | which of the project's `deliver` folders the clip goes to |

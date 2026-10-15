@@ -3,8 +3,19 @@
  * the engine and every scenario (through `h`) can use.
  */
 
-/** Wait `ms` milliseconds. */
-export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+/**
+ * The take's tempo. In a slow-motion take (`meta.slow`), the product runs
+ * `slow` times slower and so does the hand: every wait and glide is
+ * stretched, and the clip's clock reads the time the master will show once
+ * it is played back at speed.
+ */
+export const tempo = { slow: 1 };
+
+/** Wait `ms` milliseconds of the take's time. */
+export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms * tempo.slow));
+
+/** Milliseconds of the take's time since `since` (a performance.now() reading). */
+export const elapsed = (since) => (performance.now() - since) / tempo.slow;
 
 /**
  * A seeded random source (mulberry32), so a retake repeats the same

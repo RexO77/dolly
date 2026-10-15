@@ -55,13 +55,15 @@ export async function startCapture(page, { dir, width, height, dpr, quality = 95
 /**
  * Stitch the frames on their own clock into a constant-rate master. The
  * first frame starts the clip; the last holds until the capture stopped.
+ * A slow-motion take is played back `slow` times faster.
  */
-export function stitch({ frames, endAt }, dir, out, { fps = 30, crf = 14, x264 = 'medium' } = {}) {
+export function stitch({ frames, endAt }, dir, out, { fps = 30, crf = 14, x264 = 'medium', slow = 1 } = {}) {
   if (!frames.length) throw new Error('Chrome sent no frames during the take, so there is no master to write; check the page draws at all with dolly inspect');
   const lines = ['ffconcat version 1.0'];
   let total = 0;
   frames.forEach((f, i) => {
-    const hold = Math.max(0.001, i + 1 < frames.length ? frames[i + 1].ts - f.ts : Math.max(0.05, (endAt - f.at) / 1000));
+    /* A slow-motion take plays back `slow` times faster: its frames hold that much less. */
+    const hold = Math.max(0.001, (i + 1 < frames.length ? frames[i + 1].ts - f.ts : Math.max(0.05, (endAt - f.at) / 1000)) / slow);
     total += hold;
     lines.push(`file '${f.file}'`, `duration ${hold.toFixed(4)}`);
   });
