@@ -88,10 +88,12 @@ export function hand(h, { seed = 1, curve = ease.reach(), maxBow } = {}) {
       const words = text.split(' ');
       for (let w = 0; w < words.length; w += 1) {
         if (w > 0) {
+          h.act('key');
           await page.keyboard.type(' ');
           await sleep(rng.between(70, 140) + (words[w].length >= 7 && rng.next() < 0.6 ? rng.between(80, 180) : 0));
         }
         for (const ch of words[w]) {
+          h.act('key');
           await page.keyboard.type(ch);
           await sleep(/[?,.!-]/.test(ch) ? rng.between(150, 260) : rng.between(38, 92));
         }

@@ -99,3 +99,13 @@ test('the judge reads a dark, focused frame as a film still, and catches a brigh
   const bright = new Uint8Array(W * H * 3).fill(200);
   assert.match(judgeFilm(shots.slice(0, 1), [{ frame: bright, width: W, height: H }], takes).map((n) => n.text).join('\n'), /too bright/);
 });
+
+test('the foley puts each press where its shot shows it, and nothing after the shots', async () => {
+  const { foley, RATE } = await import('../engine/film/foley.mjs');
+  const withPress = { t: { ...take, events: [{ t: 2.4, type: 'press' }, { t: 7, type: 'press' }] } };
+  const shots = resolveShots({ take: 't', shots: [{ at: 1.8, length: 2.4, subject: 'chip' }] }, withPress);
+  const samples = foley(shots, withPress, 4);
+  const loudest = samples.reduce((best, v, i) => (Math.abs(v) > Math.abs(samples[best]) ? i : best), 0);
+  assert.ok(Math.abs(loudest / RATE - 0.6) < 0.03, 'the press at 2.4s of the take is 0.6s into the shot');
+  assert.ok(samples.slice(Math.ceil(2.5 * RATE)).every((v) => v === 0), 'silence after the shots, and the press outside them is not heard');
+});

@@ -161,8 +161,14 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
     () => new Error(`no visible, enabled button labelled "${label}" after ${timeout / 1000}s; dolly inspect lists the buttons there are`),
   );
 
+  /** Note what the hand did and when, on the clip's clock: a launch film's foley is cut from these. */
+  const act = (type) => {
+    (take.events ??= []).push({ t: Math.round(now() * 1000) / 1000, type });
+  };
+
   /** Mouse down, hold `ms`, mouse up. */
   const press = async (ms = 70) => {
+    act('press');
     await page.mouse.down();
     await sleep(ms);
     await page.mouse.up();
@@ -196,6 +202,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
     grammar,
     now,
     beat,
+    act,
     find,
     boxOf,
     center,
@@ -242,6 +249,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
       const end = typeof to === 'string' ? await center(to) : to;
       await path(start, 520);
       await sleep(hold);
+      act('press');
       await page.mouse.down();
       await sleep(hold);
       await path(end, ms);
@@ -251,6 +259,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
     /** Type at an even human pace, with a little jitter. */
     async type(text, perChar = 70) {
       for (const ch of text) {
+        act('key');
         await page.keyboard.type(ch);
         await sleep(perChar * (0.7 + Math.random() * 0.6));
       }
@@ -259,6 +268,7 @@ export function helpers(page, { width, height }, take = { beats: {}, boxes: {}, 
     async chord(...keys) {
       const key = keys.pop();
       for (const k of keys) await page.keyboard.down(k);
+      act('key');
       await page.keyboard.press(key);
       for (const k of keys.reverse()) await page.keyboard.up(k);
     },

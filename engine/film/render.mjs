@@ -8,7 +8,9 @@
  * as quick as a wide shot of a small one.
  */
 import { availableParallelism } from 'node:os';
-import { decodeFrames, encoder, frameCount } from '../ffmpeg.mjs';
+import { renameSync, rmSync, writeFileSync } from 'node:fs';
+import { decodeFrames, encoder, ffmpeg, frameCount } from '../ffmpeg.mjs';
+import { foley, wav } from './foley.mjs';
 import { WorkerPool } from '../render.mjs';
 import { resolveShots, shotAt } from './shots.mjs';
 import { projection, invert } from './camera.mjs';
@@ -151,6 +153,15 @@ export async function renderFilm({ film, takes, masters, out, onProgress, ...ove
   await enc.close();
   const frames = frameCount(out);
   if (frames !== written) throw new Error(`${out} has ${frames} frames, not ${written}; render it again`);
+  /* The foley: the hand's presses and keystrokes, cut as the picture is cut, laid under it. */
+  if (opts.sound !== false) {
+    const sound = `${out}.foley.wav`;
+    const muxed = `${out}.muxed.mp4`;
+    writeFileSync(sound, wav(foley(shots, takes, frames / fps)));
+    ffmpeg(['-i', out, '-i', sound, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', muxed]);
+    renameSync(muxed, out);
+    rmSync(sound, { force: true });
+  }
   return { frames, duration: frames / fps, shots };
 }
 
