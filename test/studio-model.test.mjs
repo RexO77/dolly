@@ -212,3 +212,10 @@ test('a frame goes on, changes, undoes, and comes off', () => {
   c.removeFrame();
   assert.equal(c.spec.frame, undefined);
 });
+
+test('a take recorded only for a launch film leads with its film', () => {
+  const launch = summary({ master: true, take: true, directs: false }, { film: { rendered: null } });
+  assert.deepEqual([stageOf(project, launch).label, stageOf(project, launch).next.kind], ['Launch take', 'film']);
+  const made = summary({ master: true, take: true, directs: false }, { film: { rendered: 1 } });
+  assert.equal(stageOf(project, made).next.label, 'Open the film');
+});

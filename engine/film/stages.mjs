@@ -52,6 +52,17 @@ function sources(project, clip, film) {
   return { takes, masters, film: { take: clip.name, ...film, ending } };
 }
 
+/** One frame of `film` (saved or not): shot `index` at shot time `t`, `width` wide. Returns {frame, width, height}. */
+export async function launchStill(project, clip, film, index, t, width = 960) {
+  const src = sources(project, clip, film);
+  return renderFilmStill({ ...src, index, t, width, height: Math.round((width * 9) / 16) });
+}
+
+/** The take a film is cut from, for the Studio: its beats, boxes, viewport, events and length. */
+export function launchTake(project, clip) {
+  return takeOf(project, clip);
+}
+
 /** Each shot's middle frame, and the judge's notes on them. */
 export async function judgeLaunch(project, clip, { film } = {}) {
   const spec = film ?? filmFor(project, clip).film;

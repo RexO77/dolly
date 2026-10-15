@@ -4,18 +4,20 @@
  * judged and edited before anything is rendered. The page runs the same
  * engine/camera/math.mjs the renderer does.
  *
- * It reads a project's masters and takes, and writes only two things: the
- * clip's camera file (on Save) and the render in out/ (on Render). Proxies
- * and poster frames are scratch, under the workspace's .dolly/.
+ * It reads a project's masters and takes, and writes only what a person
+ * asks for: a clip's camera file or film (on Save) and its render in out/
+ * (on Render). Proxies, poster frames and film stills are scratch, under the
+ * workspace's .dolly/.
  */
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, readFileSync, renameSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { extname, join, normalize } from 'node:path';
 import { PACKAGE, loadClip, matchClips } from './config.mjs';
-import { probe, ffmpeg, decodeFrames } from './ffmpeg.mjs';
+import { probe, ffmpeg, decodeFrames, writeWebp } from './ffmpeg.mjs';
 import { normalizeSpec, checkSpec } from './camera/math.mjs';
 import { outputSize } from './render.mjs';
 import { render, specFor, status } from './stages.mjs';
+import { filmFor, judgeLaunch, launchStill, launchTake, renderLaunch } from './film/stages.mjs';
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
 const STUDIO = join(PACKAGE, 'studio');
@@ -109,6 +111,10 @@ async function clipSummary(project, name) {
     directedBy: directed,
     duration: state.master ? probe(clip.paths.master).duration : null,
     source: spec?.source ?? {},
+    /* Launch mode: whether the clip has a film to make, and its render if it has one. */
+    film: clip.film || existsSync(clip.paths.film)
+      ? { rendered: existsSync(clip.paths.launch) ? Math.round(statSync(clip.paths.launch).mtimeMs) : null, directedBy: existsSync(clip.paths.film) ? JSON.parse(readFileSync(clip.paths.film, 'utf8')).directed ?? 'scenario' : null }
+      : null,
     poster: state.master ? `/media/poster/${encodeURIComponent(name)}?v=${Math.round(Math.max(statSync(clip.paths.master).mtimeMs, state.rendered ? statSync(clip.paths.out).mtimeMs : 0))}` : null,
   };
 }
@@ -202,6 +208,55 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
     };
   }
 
+  /* Launch mode. Stills are the film renderer's own frames, of the film as it is being edited, cached by what made them. */
+  const stills = new Map();
+  async function filmRoute(name, action, req, res) {
+    const clip = await loadClip(project, name);
+    if (!action && req.method === 'GET') {
+      const take = launchTake(project, clip);
+      return send(res, 200, { film: filmFor(project, clip).film, take: { beats: take.beats, boxes: take.boxes, viewport: take.viewport, master: take.master, events: take.events ?? [] }, rendered: existsSync(clip.paths.launch) ? Math.round(statSync(clip.paths.launch).mtimeMs) : null });
+    }
+    if (!action && req.method === 'PUT') {
+      const film = JSON.parse(await body(req));
+      mkdirSync(project.paths.films, { recursive: true });
+      /* Marked as directed by hand, so directing from the scenario again keeps it. */
+      writeFileSync(clip.paths.film, `${JSON.stringify({ directed: 'studio', ...film }, null, 2)}\n`);
+      log(`  saved ${project.workspace.rel(clip.paths.film)}`);
+      return send(res, 200, { saved: project.workspace.rel(clip.paths.film) });
+    }
+    if (action === '/still' && req.method === 'POST') {
+      const { film, shot, t, width = 960 } = JSON.parse(await body(req));
+      const key = JSON.stringify([film.shots[shot], film.take, shot, Math.round(t * 24), width, statSync(clip.paths.master).mtimeMs]);
+      if (!stills.has(key)) {
+        const still = await launchStill(project, clip, film, shot, t, width);
+        const out = join(project.paths.tmp, 'stills', `${name}-${stills.size}.webp`);
+        mkdirSync(join(project.paths.tmp, 'stills'), { recursive: true });
+        writeWebp(still.frame, still.width, still.height, out, 82);
+        stills.set(key, out);
+      }
+      return file(req, res, stills.get(key));
+    }
+    if (action === '/judge' && req.method === 'POST') {
+      const { film } = JSON.parse(await body(req));
+      const { notes } = await judgeLaunch(project, clip, { film });
+      return send(res, 200, { notes });
+    }
+    if (action === '/render' && req.method === 'POST') {
+      const key = `film:${name}`;
+      if (renders.get(key)?.state === 'rendering') return send(res, 409, { error: 'already rendering' });
+      const job = { state: 'rendering', done: 0, total: 1 };
+      renders.set(key, job);
+      log(`  rendering ${name}'s film`);
+      renderLaunch(project, clip, { onProgress: (done, total) => Object.assign(job, { done, total }) }).then(
+        (r) => Object.assign(job, { state: 'done', result: { out: project.workspace.rel(r.out), duration: r.duration, notes: r.notes } }),
+        (error) => Object.assign(job, { state: 'failed', error: error.message }),
+      );
+      return send(res, 202, job);
+    }
+    if (action === '/render' && req.method === 'GET') return send(res, 200, renders.get(`film:${name}`) ?? { state: 'idle' });
+    return send(res, 404, { error: 'not found' });
+  }
+
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const path = decodeURIComponent(url.pathname);
@@ -216,6 +271,10 @@ export async function startStudio(project, { port = 4800, log = console.log, dev
         const clip = await loadClip(project, m[2]);
         return file(req, res, m[1] === 'master' ? proxy(project, clip) : clip.paths.out);
       }
+      m = /^\/media\/film\/([\w.-]+)\.mp4$/.exec(path);
+      if (m) return file(req, res, (await loadClip(project, m[1])).paths.launch);
+      m = /^\/api\/clip\/([\w.-]+)\/film(\/still|\/judge|\/render)?$/.exec(path);
+      if (m) return await filmRoute(m[1], m[2], req, res);
       m = /^\/media\/poster\/([\w.-]+)$/.exec(path);
       if (m) {
         const still = posterFrame(project, await loadClip(project, m[1]));

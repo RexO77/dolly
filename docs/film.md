@@ -70,6 +70,10 @@ dolly film shop shop-launch
 
 `dolly film` writes the shots to `films/<clip>.film.json`, where you can edit them, renders `out/<clip>-film.mp4` and its poster (from the payoff), and judges the film. `--judge` only judges, which is quick: it renders each shot's middle frame.
 
+## Direct it in the Studio
+
+`dolly studio <project>` lists every clip; a clip with a film has **Direct the film**. The film editor shows the open shot as the film renderer draws it (drag the time to see any moment of it), every shot in a row under it, and on the right each shot's cut, subject, scale and length, the ending's copy, and the judge. Every picture there is a frame of the real render, of the film as you are editing it, so what you see is what renders. **Save** writes `films/<clip>.film.json` (and marks it directed in the Studio, so directing from the scenario again keeps it); **Render** saves, then makes the film with its sound.
+
 ## The judge
 
 Each shot's middle frame is measured like a frame grab from a film, and the cut is read like an edit:

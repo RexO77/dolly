@@ -36,21 +36,27 @@ export function usePlayback(transport) {
  * is the home screen. Going between them is a history step, so Back works.
  */
 export function useRoute() {
-  const read = () => new URLSearchParams(location.search).get('clip');
-  const [clip, setClip] = useState(read);
+  const read = () => {
+    const q = new URLSearchParams(location.search);
+    return { clip: q.get('clip'), view: q.get('view') };
+  };
+  const [route, setRoute] = useState(read);
   useEffect(() => {
-    const onPop = () => setClip(read());
+    const onPop = () => setRoute(read());
     addEventListener('popstate', onPop);
     return () => removeEventListener('popstate', onPop);
   }, []);
-  const go = useCallback((name) => {
+  /* `view` is 'film' for a clip's launch film, or nothing for its demo. */
+  const go = useCallback((name, view = null) => {
     const url = new URL(location.href);
     if (name) url.searchParams.set('clip', name);
     else url.searchParams.delete('clip');
+    if (name && view) url.searchParams.set('view', view);
+    else url.searchParams.delete('view');
     history.pushState(null, '', url);
-    setClip(name);
+    setRoute({ clip: name, view });
   }, []);
-  return [clip, go];
+  return [route, go];
 }
 
 /** The playhead's time, the way the Studio writes every time. */

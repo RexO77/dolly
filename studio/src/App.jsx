@@ -1,6 +1,6 @@
 /**
- * The Studio: the home screen (every clip and its next step) or the editor
- * for one clip, by the URL. The library keeps every clip that has been
+ * The Studio: the home screen (every clip and its next step), the editor
+ * for one clip's demo, or the editor for its launch film, by the URL. The library keeps every clip that has been
  * opened, so moving between the two never loses an edit.
  */
 import { useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import { MotionConfig } from 'motion/react';
 import { useRoute, useVersion } from './hooks.js';
 import { Home } from './parts/Home.jsx';
 import { Editor } from './parts/Editor.jsx';
+import { FilmEditor } from './parts/FilmEditor.jsx';
 
 /** Closing the tab with edits that are not saved asks first. */
 function useUnsavedGuard(library) {
@@ -21,7 +22,7 @@ function useUnsavedGuard(library) {
 }
 
 export function App({ library }) {
-  const [clip, go] = useRoute();
+  const [{ clip, view }, go] = useRoute();
   const [error, setError] = useState(null);
   useVersion(library);
   useUnsavedGuard(library);
@@ -41,7 +42,13 @@ export function App({ library }) {
 
   return (
     <MotionConfig reducedMotion="user">
-      {clip ? <Editor key={clip} library={library} name={clip} onHome={() => go(null)} /> : <Home library={library} onOpen={go} />}
+      {clip && view === 'film' ? (
+        <FilmEditor key={`film-${clip}`} name={clip} onHome={() => { go(null); library.refresh(); }} />
+      ) : clip ? (
+        <Editor key={clip} library={library} name={clip} onHome={() => go(null)} />
+      ) : (
+        <Home library={library} onOpen={go} />
+      )}
     </MotionConfig>
   );
 }

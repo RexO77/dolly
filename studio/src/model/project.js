@@ -55,6 +55,17 @@ export function stageOf(project, clip, { notes = 0, dirty = false, rendering = n
   if (rendering !== null) {
     return { key: 'rendering', step: 2, label: `Rendering ${Math.round(rendering * 100)}%`, detail: 'Making the clip. It takes about as long as the clip runs.', next: null, attention };
   }
+  /* A take recorded for a launch film, with no demo of its own: its next step is the film. */
+  if (clip.film && !s.directs && !s.camera) {
+    return {
+      key: clip.film.rendered ? 'film-rendered' : 'film',
+      step: clip.film.rendered ? 3 : 1,
+      label: clip.film.rendered ? 'Launch film rendered' : 'Launch take',
+      detail: clip.film.rendered ? 'Its film is in out/, with its sound. Direct it again to change a shot.' : 'Recorded for a launch film: hero shots cut from it, not a demo clip.',
+      next: { kind: 'film', label: clip.film.rendered ? 'Open the film' : 'Direct the film' },
+      attention,
+    };
+  }
   if (dirty) {
     return { key: 'dirty', step: 1, label: 'Unsaved changes', detail: 'Changed in the Studio and not saved yet.', next: { kind: 'open', label: 'Keep directing' }, attention };
   }

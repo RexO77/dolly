@@ -421,3 +421,36 @@ h2 { font-size: var(--text-l); font-weight: 500; line-height: 1.25; letter-spaci
 }
 .frame-swatch[aria-checked="true"] { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 2px var(--accent); }
 .frame-swatch:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ── Launch film ──
+ * Its own room in the same house: the picture is the renderer's frame on
+ * the deepest ink, the shots run in a row under it, each cell as wide as
+ * its shot is long. */
+.clip-film { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.film-tag { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-s); color: var(--text-1); }
+.film-tag::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: var(--wash); }
+.film-picture { --picture-well: #000; background: #000; }
+.film-picture { min-height: 0; padding: 0; }
+.film-picture img, .film-picture video { width: 100%; height: 100%; min-height: 0; object-fit: contain; display: block; border-radius: 0; outline: none; }
+.film-busy { opacity: 0.82; transition: opacity 200ms ease-out; }
+.film-error { color: var(--text-3); font-size: var(--text-s); align-self: center; justify-self: center; }
+.film-scrub { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 8px 20px 0; font-size: var(--text-xs); color: var(--text-3); }
+.film-scrub input { width: 100%; accent-color: var(--accent); }
+.film-strip { display: flex; gap: 4px; padding: 10px 20px 14px; min-height: 92px; }
+.film-cell {
+  position: relative; display: grid; grid-template-rows: 1fr auto; gap: 4px; min-width: 56px; padding: 0; border-radius: 6px; overflow: hidden;
+  background: #000; text-align: start; color: var(--text-3); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow 150ms ease-out;
+}
+.film-cell.on { box-shadow: inset 0 0 0 1px var(--line), 0 0 0 2px var(--accent); }
+.film-cell-img { display: block; min-height: 48px; overflow: hidden; }
+.film-cell-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.film-cell-label { padding: 0 6px 5px; font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.film-end { flex: 0 0 64px; display: grid; place-items: center; font-size: var(--text-xs); color: var(--text-3); background: #000; }
+.film-diagonal { width: 18px; height: 18px; border-radius: 4px; background: linear-gradient(to top right, transparent calc(50% - 0.75px), var(--text-2) calc(50% - 0.75px) calc(50% + 0.75px), transparent calc(50% + 0.75px)); }
+.film-diagonal.down { transform: scaleY(-1); }
+.film-diagonal.flat { background: linear-gradient(transparent calc(50% - 0.75px), var(--text-2) calc(50% - 0.75px) calc(50% + 0.75px), transparent calc(50% + 0.75px)); }
+.note-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--note); }
+.note.note-ok { background: var(--fill); }
+.text-input { width: 100%; height: 32px; padding: 0 10px; border-radius: var(--radius); border: 0; background: var(--fill); color: var(--text-1); font: var(--text-m) var(--sans); }
+.text-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.state-film, .state-film-rendered { --dot: var(--wash); }

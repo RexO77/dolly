@@ -55,6 +55,13 @@ export function ClipRow({ library, summary, stage, onOpen }) {
           {stage.attention && <span className="attention">{stage.attention}</span>}
         </div>
         <p className="clip-detail" role={error ? 'alert' : undefined}>{error ?? stage.detail}</p>
+        {summary.film && next?.kind !== 'film' && (
+          <div className="clip-film">
+            <span className="film-tag">Launch film</span>
+            <span className="clip-meta">{summary.film.rendered ? 'rendered' : summary.film.directedBy === 'studio' ? 'directed in the Studio' : 'not rendered yet'}</span>
+            <OpenLink onClick={() => onOpen(summary.name, 'film')}>Direct the film</OpenLink>
+          </div>
+        )}
       </div>
 
       <div className="clip-next">
@@ -63,6 +70,8 @@ export function ClipRow({ library, summary, stage, onOpen }) {
             <RenderButton variant="default" label={next?.label ?? 'Render'} progress={rendering} onRender={render} />
             <OpenLink onClick={open} />
           </>
+        ) : next?.kind === 'film' ? (
+          <Button onClick={() => onOpen(summary.name, 'film')}>{next.label}</Button>
         ) : next?.kind === 'open' ? (
           <Button onClick={open}>{next.label}</Button>
         ) : next?.kind === 'command' ? (
