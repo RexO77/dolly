@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Dolly records a real web product in a real Chrome window parked off screen, with no cursor, then directs a camera over the take (lean in, hold, pull back, a wash spotlight) and renders a web-ready clip. It is published as `@nischalskanda/dolly` (MIT, public), and the command is `dolly`.
+Dolly records a real web product in a real Chrome window parked off screen, with no cursor, then makes video from the take in two modes: a demo clip (a flat camera that leans in, holds and pulls back, with a wash spotlight) or a launch film (hero shots of the UI tilted in a black void, a thin focal plane, light falling off, hard cuts, 24 fps). Each mode is judged by its own rules. It is published as `@nischalskanda/dolly` (MIT, public), and the command is `dolly`.
 
 `PLAN.md` holds the current plan, its workstreams and their acceptance checks. Tick a check there when it passes.
 
@@ -8,6 +8,7 @@ Dolly records a real web product in a real Chrome window parked off screen, with
 
 - `engine/` the engine: recording (`record`, `capture`, `browser`, `input` for `h`, `hand`, `motion`), directing (`direct`, `retime`, `camera/`), rendering (`render`, `ffmpeg`), files and delivery (`files`), the Studio's server (`studio.mjs`). `engine/index.mjs` is the documented public API.
 - `engine/camera/` the camera: `math.mjs` (where the view is at any time), `grammar.mjs` (the grammar's numbers, the frame's too), `card.mjs` (where the frame's card sits: flat, no perspective), `compose.mjs` (the card on its background), `resample.mjs` (Pillow-exact Lanczos), `frame.mjs` (one delivered frame). Pure modules: the Studio runs `math.mjs`, `grammar.mjs` and `card.mjs` in the browser.
+- `engine/film/` launch mode: `grammar.mjs` (every number behind the look), `camera.mjs` (the take as a plane through a perspective camera), `shots.mjs` (a shot's camera, focus and light from its subject), `direct.mjs` (a scenario's `film` to shots), `frame.mjs` (one frame: mipmapped sampling, optical depth of field, light on the plane), `render.mjs` (crops, workers, motion blur, grain), `ending.mjs` (copy, then the logo), `judge.mjs` (a film still's checklist), `stages.mjs`.
 - `cli/` the `dolly` command: `index.mjs` dispatches, one module per command in `cli/commands/` exporting `usage`, `summary`, optional `flags`, `details`, `examples` and `aliases`, and a default function.
 - `studio/` the Studio (`dolly studio`, alias `storyboard`): React and Motion, built with Vite into `studio/dist` (shipped; run `npm run build:studio`). `src/model/` is framework-free (the clip, its edits, verbs and fixes; the transport and drawing) and imports the engine's camera modules directly; `src/ui/` holds Dolly's controls (the lens barrel, `sound.js` for the Studio's Web Audio sounds); `src/parts/` the screen; `src/styles/tokens.css` the visual system. Work on it live with `dolly studio <p> --dev`.
 - `site/` the landing page (Vite, built to `site/dist`, deployed to GitHub Pages), and `examples/demo/` a workspace with Wrenly, a fictional product the site's clips are recorded from.
@@ -19,6 +20,7 @@ A user's clips never live in this repo. They live in a workspace: a folder with 
 
 ## Ground rules
 
+- Launch films follow `engine/film/grammar.mjs`, set from the cinematic-shot method (hero shots in a black void, no cursor, no music, cut on the action, copy then a still logo); the judge's thresholds are measured on a reference film, not guessed. A launch take wants `viewport.dpr` 4, `colorScheme: 'dark'` and `slow: 4`.
 - The camera grammar is the owner's direction, not a default: establish wide, lean in to about 1.35 on a zero-bounce spring, settle, let the change play with the camera still, pull back and hold. No cursor. A wash-only spotlight, never a ring. Its numbers live only in `engine/camera/grammar.mjs`.
 - The preview must match the render. Anything the Studio shows about the camera comes from `engine/camera/math.mjs`, the module the renderer uses. The resampler is byte-identical to Pillow (so the render of `rec-walk` matches the legacy `camera.py` byte for byte); keep it that way (`test/resample.test.mjs` checks the resampler against a Pillow fixture).
 - The Studio's look is Night (chosen 2026-09-25, in the spirit of rows.gg): dark first whatever the system says, paper and ink tones with depth from tone steps, Hanken Grotesk and DM Mono bundled, the footage lighting the room, the wash as the accent. Colour only where it means something: the wash and notes. Light is a choice the person makes.

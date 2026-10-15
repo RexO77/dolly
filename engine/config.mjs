@@ -67,6 +67,7 @@ export async function loadProject(ws, name, { masters, out } = {}) {
     paths: {
       scenarios: join(found.dir, 'scenarios'),
       cameras: join(found.dir, 'cameras'),
+      films: join(found.dir, 'films'),
       masters: join(expand(masters) ?? ws.paths.masters, found.name),
       out: join(expand(out) ?? ws.paths.out, found.name),
       tmp: join(ws.paths.tmp, found.name),
@@ -127,7 +128,8 @@ const META = {
 };
 
 /**
- * A clip: its scenario module (`setup`, the take, `direction` or `camera`),
+ * A clip: its scenario module (`setup`, the take, `direction` or `camera`
+ * for its demo, `film` for its launch film),
  * its meta resolved against the project, and the paths of its master, take
  * file, camera file, render and poster. A clip with only a master loads too.
  * @param {Awaited<ReturnType<typeof loadProject>>} project
@@ -147,12 +149,16 @@ export async function loadClip(project, name) {
     take: mod.default,
     camera: mod.camera,
     direction: mod.direction,
+    film: mod.film,
     paths: {
       master: join(project.paths.masters, `${name}.mp4`),
       take: join(project.paths.masters, `${name}.take.json`),
       camera: join(project.paths.cameras, `${name}.camera.json`),
       out: join(project.paths.out, `${name}.mp4`),
       poster: join(project.paths.out, `${name}-poster.webp`),
+      film: join(project.paths.films, `${name}.film.json`),
+      launch: join(project.paths.out, `${name}-film.mp4`),
+      launchPoster: join(project.paths.out, `${name}-film-poster.webp`),
     },
   };
 }

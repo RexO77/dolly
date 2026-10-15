@@ -1,0 +1,53 @@
+{
+  "take": "wrenly-launch",
+  "shots": [
+    {
+      "at": 1.72,
+      "length": 2.4,
+      "subject": "chip"
+    },
+    {
+      "at": 3.41,
+      "length": 3,
+      "subject": "list"
+    },
+    {
+      "at": 6.1,
+      "length": 2.8,
+      "subject": "issue",
+      "rack": [
+        {
+          "at": 1.7,
+          "to": "status"
+        }
+      ]
+    },
+    {
+      "at": 8.82,
+      "length": 3,
+      "subject": "menu"
+    },
+    {
+      "at": 10.1,
+      "length": 3.6,
+      "subject": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "scale": "wide"
+    },
+    {
+      "at": 11.6,
+      "length": 2.33,
+      "subject": "toast"
+    }
+  ],
+  "ending": {
+    "copy": "Wrenly.",
+    "tagline": "Ship the week.",
+    "logo": "app/mark.svg",
+    "name": "Wrenly"
+  }
+}

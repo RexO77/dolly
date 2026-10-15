@@ -60,13 +60,13 @@ function writePoster(frame, OW, OH, poster) {
 }
 
 /** Render workers, one frame per job. Frames go to a free worker, or wait for one. */
-class WorkerPool {
-  constructor(size) {
+export class WorkerPool {
+  constructor(size, script = new URL('./camera/worker.mjs', import.meta.url)) {
     this.idle = [];
     this.waiting = [];
     this.jobs = new Map();
     this.workers = Array.from({ length: size }, () => {
-      const worker = new Worker(new URL('./camera/worker.mjs', import.meta.url));
+      const worker = new Worker(script);
       worker.on('message', ({ id, out }) => {
         const job = this.jobs.get(id);
         this.jobs.delete(id);

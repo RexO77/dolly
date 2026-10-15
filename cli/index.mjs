@@ -11,6 +11,7 @@ import { parse, flagSpec, context, log } from './util.mjs';
 const GROUPS = [
   ['Start', ['init', 'doctor']],
   ['Make a clip', ['inspect', 'record', 'studio', 'render', 'deliver']],
+  ['Make a launch film', ['film']],
   ['More', ['list', 'direct', 'poster', 'stills']],
 ];
 

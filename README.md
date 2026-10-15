@@ -22,6 +22,13 @@ Dolly records a web product the way a person would use it, minus the cursor, and
 
 That's the whole tool. The camera follows one grammar, so every clip moves the same way.
 
+## Two modes
+
+- **Demo:** a flat, legible clip of the product working, for docs and case studies. `dolly render`.
+- **Launch:** a film of hero shots, the real UI tilted in a black void with a thin band in focus, cut hard on the action and ending on a line of copy and the logo, at 24 fps. `dolly film`. See [docs/film.md](docs/film.md).
+
+Each is judged by its own rules: the demo by the camera's notes, the launch film by a film still's checklist measured on every shot.
+
 ## Install
 
 | | |

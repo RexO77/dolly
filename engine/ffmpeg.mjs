@@ -74,8 +74,8 @@ export function probe(path) {
  * Calls `onFrame(frame, index)` once per frame, in order, awaiting each.
  * Every frame is its own buffer, so it can be kept or handed to a worker.
  */
-export async function decodeFrames(path, { width, height, filter, end, scale = false, pixFmt = 'rgb24' }, onFrame) {
-  const args = ['-v', 'error', '-i', path];
+export async function decodeFrames(path, { width, height, filter, start: from, end, scale = false, pixFmt = 'rgb24' }, onFrame) {
+  const args = ['-v', 'error', ...(from ? ['-ss', from.toFixed(3)] : []), '-i', path];
   if (filter) args.push('-filter_complex', filter, '-map', '[v]');
   else if (scale) args.push('-vf', `scale=${width}:${height}`);
   if (end !== undefined) args.push('-t', end.toFixed(3));
@@ -106,9 +106,10 @@ export async function decodeFrames(path, { width, height, filter, end, scale = f
 }
 
 /** An H.264 encoder fed raw rgb24 frames: web-ready (yuv420p, faststart, no audio). */
-export async function encoder(out, { width, height, fps, crf, preset }) {
+export async function encoder(out, { width, height, fps, crf, preset, filter }) {
   const child = await start('ffmpeg', [
     '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', `${width}x${height}`, '-r', String(fps), '-i', '-',
+    ...(filter ? ['-vf', filter] : []),
     '-c:v', 'libx264', '-preset', preset, '-crf', String(crf), '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', out,
   ], { stdio: ['pipe', 'ignore', 'pipe'] });
   const exited = once(child, 'close');
