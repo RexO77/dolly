@@ -1,13 +1,15 @@
 ---
 name: dolly
-description: Record, re-cut and fix real product clips with Dolly (the `dolly` CLI). Use when a case study, README or site needs footage of a real web product; when a clip must be re-cut because the product changed; or when a clip's poster or camera is wrong.
+description: Record, re-cut and fix real product clips and launch films with Dolly (the `dolly` CLI). Use when a case study, README or site needs footage of a real web product; when a launch, feature trailer or teaser needs a cinematic film of the product's UI; when a clip must be re-cut because the product changed; or when a clip's poster or camera is wrong.
 ---
 
 # Dolly
 
 Dolly records a web product in an off-screen Chrome with no cursor while a scenario plays it at a human pace (the **take**), then directs a camera over the take and renders an MP4 and a poster. Your part is the scenario and the take. The person's part is directing: they watch the camera over the real take in the Studio (`dolly studio`) and render there.
 
-Everything goes through the `dolly` CLI. `dolly help <command>` is the source of truth for flags. The full reference is in Dolly's `docs/`, one folder up from this file: `scenarios.md` (the `h` API, `direction`), `camera.md` (the spec and the grammar), `workflow.md` (what each stage writes where). Read `scenarios.md` before writing your first scenario.
+Everything goes through the `dolly` CLI. `dolly help <command>` is the source of truth for flags. The full reference is in Dolly's `docs/`, one folder up from this file: `scenarios.md` (the `h` API, `direction`), `camera.md` (the spec and the grammar), `workflow.md` (what each stage writes where), `film.md` (launch films). Read `scenarios.md` before writing your first scenario.
+
+Dolly makes two kinds of video from a take. A **demo** clip (`dolly render`) is flat and legible, for docs and case studies. A **launch film** (`dolly film`) is hero shots of the UI tilted in a black void, cut on the action, ending on a line of copy and the logo, for launch posts and trailers. Ask which the person wants when it is not clear.
 
 ## A new clip
 
@@ -15,11 +17,17 @@ Everything goes through the `dolly` CLI. `dolly help <command>` is the source of
 2. **Check the machine.** `dolly doctor`. Done when every line reads `ok`; a project that is `down` but has a start command is fine, Dolly starts it.
 3. **Add the product** if `dolly list` does not show it: `dolly init <name> --from <product repo>`. Read the table it prints. Done when its port and start command match how the product really serves (check the product's dev config when the reason says "default").
 4. **Find the targets.** `dolly inspect <project> <path>` lists the page's controls with their boxes and writes a screenshot (look at it). Done when you have a selector or exact label for every control the hand touches and every region the camera leans in on.
-5. **Write the scenario** in `projects/<project>/scenarios/<clip>.mjs`, starting from the one `dolly init` wrote, in the storyboard format: doc comment, STORYBOARD shot list, `TIMING`, config objects, the take, a declarative `direction`. Done when `dolly list <project>` shows the clip with `scenario` and every time in the STORYBOARD comment agrees with `TIMING` and the grammar.
+5. **Write the scenario** in `projects/<project>/scenarios/<clip>.mjs`, starting from the one `dolly init` wrote, in the storyboard format: doc comment, STORYBOARD shot list, `TIMING`, config objects, the take, a declarative `direction`. Done when `dolly list <project>` lists the clip (without `(no scenario)`) and every time in the STORYBOARD comment agrees with `TIMING` and the grammar.
 6. **Record.** `dolly record <project> <clip>`. Done when it prints `recorded` and `directed`, and every warning is fixed or explained to the person.
 7. **Check the camera.** `dolly studio <project> <clip> --text`. Done when every beat lands during a hold and the last hold is at least 0.8s.
 8. **Hand it over.** Give the person `dolly studio <project> <clip>`: it serves the Studio until ctrl-c, so it is theirs to run. They direct, Save and Render there.
 9. **Render and deliver** when the person asks: `dolly render <project> <clip>`, then `dolly deliver <project> <clip>`. Delivered files are shipped: when deliver lists files it kept, show them to the person, and pass `--yes` only on their word.
+
+## A launch film
+
+1. **Record a launch take**: a scenario of its own whose `meta` has `viewport: { dpr: 4 }`, `colorScheme: 'dark'` (the product's dark mode) and `slow: 4`. Play the story slowly enough to watch each action, mark a beat at each one, and mark a box (`h.boxCss(name, await h.boxOf(selector))`) on everything a shot might look at: a button, a row, a panel, a menu, a toast. Done when `dolly record` prints `recorded` at 5760 wide.
+2. **Write its `film`** in the same scenario: `{ shots: [{ on: beat, subject: box }...], ending: { copy, tagline, logo, name } }`, with one `{ on, wide: true }` payoff in the second half. See `docs/film.md`. Done when `dolly film <project> <clip> --judge` ends in a `✓` with no notes.
+3. **Hand it over.** `dolly film <project> <clip>` renders `out/<project>/<clip>-film.mp4` with its sound and judges it; the person directs the film in the Studio (**Direct the film**). Never fake the judge: fix each note in the `film`, then judge again.
 
 ## Writing the scenario
 
@@ -50,7 +58,7 @@ Change the scenario's `direction` (another box, another beat, a `cut` for a wait
 
 | What you see | What to do |
 | --- | --- |
-| `FAIL` in `dolly doctor` | run the `fix:` it prints under that line, then `dolly doctor` again |
+| a `✕` row in `dolly doctor` | run the `fix:` it prints under that line, then `dolly doctor` again |
 | `nothing answers at <base>` | the product has no start command: start its dev server, or add `start` to `project.json` |
 | `dev server exited` or `did not answer` | read `.dolly/<project>/<project>-server.log`; usually the port is taken or the product does not build |
 | `the product reloaded during the take` | a hot update reset the app: files in the product changed while recording (another session editing it, a formatter, a build). Record once edits have stopped; `--takes 3` gives each clip three tries |

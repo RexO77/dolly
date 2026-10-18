@@ -10,7 +10,7 @@ A clip goes through five stages. Each one re-runs from what the last one wrote, 
 | render | `dolly render <p> [clip...]` | the master, the camera file | `out/<p>/<clip>.mp4` and `out/<p>/<clip>-poster.webp` |
 | deliver | `dolly deliver <p> [clip...]` | `out/<p>/` | the folder the project's `deliver` names |
 
-`dolly list` shows where every clip stands: whether it has a scenario and a take, where its camera comes from (its scenario, the Studio, a camera file of its own, or none, in which case it renders wide), and whether its render is older than its master or camera (`RENDER OUT OF DATE`).
+`dolly list` shows where every clip stands, in two columns: its demo (rendered or not, and where its camera comes from: its scenario, the Studio, a camera file of its own, or none, in which case it renders wide) and its launch film (rendered or not, and where the film comes from). A render older than its master or camera says `! out of date`, and the list ends with the next command to run.
 
 ## Record
 
