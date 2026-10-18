@@ -104,6 +104,11 @@ function placeVisuals(tokens, visuals = {}) {
     slugs.splice(at, 0, ...names.map(() => null));
   };
   for (const { key, names, replace } of want) {
+    if (key === '_lead') {
+      const first = out.findIndex((t) => t.type === 'paragraph');
+      insert(first + 1, names);
+      continue;
+    }
     if (key === '_top') {
       const first = out.findIndex((t) => t.type === 'heading');
       insert(first < 0 ? out.length : first, names);

@@ -277,6 +277,22 @@ code { font-size: 0.88em; }
 .step h3 span { font-family: var(--mono); font-size: 12px; font-weight: 400; color: var(--text-3); }
 .step p { margin: 8px 10px 0; color: var(--text-2); font-size: 15px; line-height: 1.6; }
 
+/* Two modes: the demo and the launch film, each playing in its own frame, on the same 16:10 so the words line up.
+ * The film is 16:9 on its own black, so the bars above and below it disappear into the frame. */
+.modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.mode-card { min-width: 0; padding: 6px 6px 20px; border-radius: var(--r-well); background: var(--well); }
+.mode-player .screen { aspect-ratio: 16 / 10; padding: 0; }
+.mode-player .screen video { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+.mode-player.is-film .screen { background: #000; }
+.mode-player.is-film .screen video { object-fit: contain; }
+.mode-player.film-only .screen { aspect-ratio: 16 / 9; }
+/* On the film's black, the play button is a light glass rather than a dark one. */
+.mode-player.is-film .big-play { background: oklch(1 0 0 / 0.14); }
+.mode-card h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 18px 10px 0; font-size: 17px; font-weight: 560; letter-spacing: -0.02em; }
+.mode-card h3 code { color: var(--text-3); font-size: 12.5px; font-weight: 400; }
+.mode-card p { margin: 8px 10px 0; color: var(--text-2); font-size: 15px; line-height: 1.6; }
+.pb-sound { margin-inline-start: 2px; }
+
 /* Rows: the words top-aligned on the left, the demo on the right, on one grid everywhere. */
 .rows { display: grid; gap: 112px; }
 .row { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 32px 64px; align-items: start; }
@@ -521,7 +537,7 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
   .hero { padding: 56px 0 36px; }
   .agents { grid-template-columns: minmax(0, 1fr); }
   .head { grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 28px; }
-  .steps { grid-template-columns: minmax(0, 1fr); }
+  .steps, .modes { grid-template-columns: minmax(0, 1fr); }
   .start, .end { grid-template-columns: minmax(0, 1fr); }
   .block { padding-top: 112px; }
   .end { padding-top: 112px; }
@@ -549,6 +565,8 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: 5
   .term p { grid-template-columns: 5ch minmax(0, 1fr); }
   .pb { padding-top: 16px; background: linear-gradient(to top, oklch(0.12 0.004 301 / 0.6), transparent); }
   .hero-pb { padding-top: 18px; }
+  .mode-player .big-play { width: 60px; height: 60px; }
+  .mode-player .big-play svg { width: 22px; height: 22px; }
 }
 @media (max-width: 400px) {
   .sound-toggle:not(.big) .sound-words { display: none; }

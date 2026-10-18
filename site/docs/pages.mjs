@@ -6,7 +6,8 @@
  *   source    the markdown: a file, or sections picked out of several
  *   visuals   live pieces mounted beside the text, keyed by the heading they
  *             follow: `slug` puts it after the section's first block,
- *             `slug$` at the section's end, `_top` before the first heading;
+ *             `slug$` at the section's end, `_top` before the first heading,
+ *             `_lead` after the page's first paragraph;
  *             `replace: true` shows it in place of the section's first code
  *             block (a plain-text drawing of the same thing)
  *   children  a page's sections listed under it in the sidebar
@@ -65,6 +66,14 @@ export const PAGES = [
     source: [{ file: 'docs/camera.md' }],
     visuals: { 'spots': 'wash', 'the-grammar': 'grammar', 'sharpness': 'sharp', 'frame': 'frame' },
     children: [['the-grammar', 'The grammar'], ['spots', 'Washes'], ['frame', 'The Frame']],
+  },
+  {
+    slug: 'film',
+    nav: 'Launch films',
+    group: 'Guides',
+    description: 'Launch mode: a film of hero shots, the real UI tilted in a black void and cut hard on the action, ending on a line of copy and a still logo. How to record for it, write it, direct it and judge it.',
+    source: [{ file: 'docs/film.md' }],
+    visuals: { _lead: 'film', 'the-shots': 'shots' },
   },
   { slug: 'workspaces', nav: 'Workspaces', group: 'Guides', source: [{ file: 'docs/workspaces.md' }] },
   { slug: 'workflow', nav: 'Workflow', group: 'Guides', source: [{ file: 'docs/workflow.md' }], visuals: { _top: 'pipeline' } },

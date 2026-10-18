@@ -119,6 +119,18 @@
 .dg-line { fill: none; stroke: var(--text-1); stroke-width: 1.5; stroke-linejoin: round; }
 .dg-dash { stroke: var(--text-4); stroke-width: 1.25; stroke-dasharray: 3 3; }
 .dg-mark { stroke: var(--wash-line); stroke-width: 1.5; }
+.dg-diag { fill: none; stroke: var(--wash-line); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The shots: footage, so the void stays black and the window stays dark in either theme. The lit chip is the wash. */
+.sg-void { fill: #000; }
+.sg-window { fill: oklch(0.24 0.008 301); }
+.sg-side { fill: oklch(0.205 0.007 301); }
+.sg-dim { fill: oklch(0.42 0.008 301); }
+.sg-text { fill: oklch(0.7 0.006 301); }
+.sg-title { fill: oklch(0.92 0.004 106); }
+.sg-chip { fill: oklch(0.93 0.03 78); }
+.sg-chip-ink { fill: oklch(0.3 0.02 78); }
+.sg-chip-dim { fill: oklch(0.34 0.008 301); }
 
 /* The grammar's steps, lit as they play */
 .cam { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }

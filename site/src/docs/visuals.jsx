@@ -9,7 +9,8 @@ import { cameraAt, viewBox, spotAlpha } from '../../../engine/camera/math.mjs';
 import { WASH, WASH_ALPHA, SPOT_RADIUS, SPRING, ESTABLISH, LEAN_Z } from '../../../engine/camera/grammar.mjs';
 import { AgentDemo, FrameDemo, WashDemo, leanKeys } from '../Demos.jsx';
 import { EditorFigure, HomeFigure, LensDemo, NotesDemo, SnapDemo, SoundsDemo } from '../StudioDemos.jsx';
-import { Player, clock, scrubLine, useClock } from '../Player.jsx';
+import { SCALES } from '../../../engine/film/grammar.mjs';
+import { Player, VideoPlayer, clock, scrubLine, useClock } from '../Player.jsx';
 import { media } from '../hooks.js';
 
 /* ─────────────────────────────────────────────────────────
@@ -210,6 +211,125 @@ export function Grammar({ tour }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────
+ * THE LAUNCH FILM, and its shots
+ *
+ * The film is Wrenly's, rendered by `dolly film`. The shots are drawn
+ * from the film grammar's own numbers: the same window seen at each
+ * scale's magnification, tilted back by its pitch and laid on its roll,
+ * the diagonal flipping on every cut, a thin band in focus and the light
+ * falling off into black. The frames are footage, so they stay dark in
+ * either theme.
+ * ───────────────────────────────────────────────────────── */
+
+export function Film() {
+  return (
+    <div className="demo">
+      <VideoPlayer src={media('film.mp4')} poster={media('film.webp')} width={1280} height={720} duration={26.43} label="Wrenly's launch film" sound className="mode-player is-film film-only" />
+    </div>
+  );
+}
+
+const SHOTS = [
+  ['Extreme close-up', 'extreme', 1],
+  ['Close-up', 'macro', -1],
+  ['Medium', 'medium', 1],
+  ['Wide', 'wide', 0],
+];
+const FW = 166; // a frame, 16:9
+const FH = Math.round((FW * 9) / 16);
+const ROWS = [0, 1, 2, 3, 4, 5].map((i) => ({ y: 130 + i * 52, id: 44 + (i % 3) * 4, text: 250 - ((i * 53) % 90) }));
+const CHIP = { x: 600, y: ROWS[3].y - 6.5, w: 74, h: 24 }; // the subject: one row's status chip, in the window's own units
+
+/** The schematic window every shot looks at: 1000 by 625 units. */
+function Slab() {
+  return (
+    <g>
+      <rect className="sg-window" width="1000" height="625" rx="16" />
+      <rect className="sg-side" width="200" height="625" rx="16" />
+      {[0, 1, 2, 3, 4, 5].map((i) => <rect key={i} className="sg-dim" x="28" y={64 + i * 36} width={120 - (i % 3) * 18} height="10" rx="5" />)}
+      <rect className="sg-title" x="244" y="56" width="230" height="20" rx="6" />
+      {ROWS.map((r, i) => (
+        <g key={i}>
+          <rect className="sg-dim" x="244" y={r.y} width={r.id} height="10" rx="5" />
+          <rect className="sg-text" x="310" y={r.y} width={r.text} height="11" rx="5" />
+          {i !== 3 && <rect className="sg-chip-dim" x={CHIP.x} y={r.y - 6.5} width={CHIP.w - (i % 2) * 12} height={CHIP.h} rx="12" />}
+          <circle className="sg-dim" cx="712" cy={r.y + 5.5} r="11" />
+          <rect className="sg-dim" x="736" y={r.y} width={70 + (i % 3) * 16} height="10" rx="5" />
+        </g>
+      ))}
+      <rect className="sg-chip" x={CHIP.x} y={CHIP.y} width={CHIP.w} height={CHIP.h} rx="12" />
+      <rect className="sg-chip-ink" x={CHIP.x + 14} y={CHIP.y + 8} width={CHIP.w - 28} height="8" rx="4" />
+    </g>
+  );
+}
+
+function Shot({ id, x, y, name, scale, sign }) {
+  const p = SCALES[scale];
+  const wide = scale === 'wide';
+  /* The wide shot holds the whole window, tilted back, with a little black around it; the others magnify from there. */
+  const fit = Math.min((0.95 * FW) / 1000, (0.9 * FH) / (625 * Math.cos((SCALES.wide.pitch * Math.PI) / 180)));
+  const s = (p.mag / SCALES.wide.mag) * fit;
+  const [cx, cy] = wide ? [500, 312] : [CHIP.x + CHIP.w / 2, CHIP.y + CHIP.h / 2];
+  const flat = Math.cos((p.pitch * Math.PI) / 180);
+  const place = `translate(${FW / 2} ${FH / 2}) rotate(${-p.roll * sign}) scale(${s} ${s * flat}) translate(${-cx} ${-cy})`;
+  const band = 30 / s; // the focal band, about 30 frame pixels across
+  const k = `${id}-${scale}`;
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <defs>
+        <clipPath id={`${k}-frame`}><rect width={FW} height={FH} rx="5" /></clipPath>
+        <clipPath id={`${k}-band`}><rect x="-2000" y={cy - band / 2} width="5000" height={band} /></clipPath>
+        <filter id={`${k}-blur`}><feGaussianBlur stdDeviation={p.farBlur / 8 / s} /></filter>
+        <radialGradient id={`${k}-light`} r={wide ? 0.9 : p.along * 1.6}>
+          <stop offset="0" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity={wide ? 0.55 : 0.94} />
+        </radialGradient>
+      </defs>
+      <g clipPath={`url(#${k}-frame)`}>
+        <rect className="sg-void" width={FW} height={FH} />
+        <g transform={place}>
+          {wide ? <Slab /> : (
+            <>
+              <g filter={`url(#${k}-blur)`} opacity="0.75"><Slab /></g>
+              <g clipPath={`url(#${k}-band)`}><Slab /></g>
+            </>
+          )}
+        </g>
+        <rect width={FW} height={FH} fill={`url(#${k}-light)`} />
+      </g>
+      <text className="dg-name" x="0" y={FH + 22}>{name}</text>
+      <text className="dg-verb" x="0" y={FH + 39}>{scale} <tspan className="dg-sub">{p.mag}×</tspan></text>
+      {wide ? <text className="dg-faint" x="0" y={FH + 58}>near-frontal, once</text> : (
+        <g transform={`translate(8 ${FH + 54}) rotate(${-p.roll * sign * 2})`}>
+          <path className="dg-mark" d="M-7,0 H7" />
+          <path className="dg-diag" d="M3,-3 L7,0 L3,3" />
+        </g>
+      )}
+      {!wide && <text className="dg-faint" x="22" y={FH + 58}>{sign > 0 ? 'rising' : 'falling'}</text>}
+    </g>
+  );
+}
+
+export function Shots() {
+  return (
+    <figure className="dg sg">
+      <svg className="dg-wide" viewBox={`0 0 ${FW * 4 + 32 * 3} ${FH + 66}`} role="img" aria-label="The same window at four scales: an extreme close-up on one chip, a close-up, a medium shot and the wide shot. Each close-up is tilted back with a thin band in focus and the light falling off into black, and its diagonal flips from the shot before. The wide shot is near-frontal.">
+        {SHOTS.map(([name, scale, sign], i) => (
+          <g key={scale}>
+            <Shot id="sgw" x={i * (FW + 32)} y={0} name={name} scale={scale} sign={sign} />
+            {i > 0 && <text className="dg-verb" x={i * (FW + 32) - 16} y={FH / 2 + 4} textAnchor="middle">cut</text>}
+          </g>
+        ))}
+      </svg>
+      <svg className="dg-tall" viewBox={`0 0 ${FW * 2 + 28} ${(FH + 76) * 2}`} role="img" aria-label="The same window at four scales: an extreme close-up on one chip, a close-up, a medium shot and the wide shot. The diagonal flips on every cut; the wide shot is near-frontal.">
+        {SHOTS.map(([name, scale, sign], i) => <Shot key={scale} id="sgt" x={(i % 2) * (FW + 28)} y={Math.floor(i / 2) * (FH + 76)} name={name} scale={scale} sign={sign} />)}
+      </svg>
+      <figcaption>The scales, from the film grammar. Every cut changes the scale or the diagonal, and the one wide shot comes in the second half, as the payoff.</figcaption>
+    </figure>
+  );
+}
+
 /* ── The registry: what each placeholder mounts, and whether it needs the take's numbers ── */
 
 export const VISUALS = {
@@ -217,6 +337,8 @@ export const VISUALS = {
   activity: { Component: Activity },
   sharp: { Component: Sharp },
   grammar: { Component: Grammar, tour: true },
+  film: { Component: Film },
+  shots: { Component: Shots },
   wash: { Component: WashDemo, tour: true },
   frame: { Component: FrameDemo, tour: true },
   lens: { Component: LensDemo, tour: true },

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stage } from './Stage.jsx';
 import { Commands, Tabs, Prompt, Mark, CopyButton, Reel } from './parts.jsx';
 import { media, storedTheme } from './hooks.js';
+import { VideoPlayer } from './Player.jsx';
 
 const GITHUB = 'https://github.com/RexO77/dolly';
 const DOCS = `${import.meta.env.BASE_URL}docs/`;
@@ -9,6 +10,12 @@ const PKG = '@nischalskanda/dolly';
 const INSTALL = `npm install -g ${PKG}`;
 
 const PROMPT = 'Record a clip of the settings page with Dolly: switch the theme to dark and let the change play. Add the product to my Dolly workspace if it is not there yet, then give me the Studio command so I can direct it.';
+
+/* Two kinds of video from the same take, each with its line and the command that makes it. */
+const MODES = [
+  { name: 'Demo', command: 'dolly render', text: 'The product working, clear and flat, for docs and case studies.', video: { src: 'directed.mp4', poster: 'directed.webp', width: 1920, height: 1200, duration: 12.17, label: 'the demo clip' } },
+  { name: 'Launch film', command: 'dolly film', text: 'Hero shots in the dark, cut on the action, for launch day.', video: { src: 'film.mp4', poster: 'film.webp', width: 1280, height: 720, duration: 26.43, label: 'the launch film', sound: true } },
+];
 
 const STEPS = [
   { title: 'Film', file: 'raw.webp', alt: 'A frame of the raw take: Wrenly, the whole screen, an issue just marked done', text: 'Dolly plays your product in Chrome from a short script. No cursor.' },
@@ -76,6 +83,19 @@ export function App() {
               </li>
             ))}
           </ol>
+        </section>
+
+        <section className="block wrap" aria-labelledby="modes-h">
+          <h2 id="modes-h" className="section-title">One take, two films.</h2>
+          <ul className="modes">
+            {MODES.map((m) => (
+              <li className="mode-card" key={m.name}>
+                <VideoPlayer {...m.video} src={media(m.video.src)} poster={media(m.video.poster)} className={`mode-player${m.video.sound ? ' is-film' : ''}`} />
+                <h3>{m.name}<code>{m.command}</code></h3>
+                <p>{m.text}</p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="block wrap" id="install" aria-labelledby="install-h">
