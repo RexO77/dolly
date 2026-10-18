@@ -13,7 +13,7 @@
  */
 import { Worker } from 'node:worker_threads';
 import { availableParallelism } from 'node:os';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { cameraAt, viewBox, spotAlpha, normalizeSpec, checkSpec } from './camera/math.mjs';
 import { resample } from './camera/resample.mjs';
@@ -51,6 +51,9 @@ function shotAt(spec, t, W, H, OW, OH) {
   const card = cardAt(look, spec.camera, t, OW, OH);
   return { view, spots, frame: { card, source: cardSource(card, view), background: look.background } };
 }
+
+/** Where a render is written while it runs: beside its final path, still an .mp4 for ffmpeg. */
+export const partialOf = (out) => out.replace(/(\.mp4)?$/, '.partial.mp4');
 
 /** A delivered frame (OW x OH) as the poster: `width` wide, WebP at `quality`. */
 function writePoster(frame, OW, OH, poster) {
@@ -123,7 +126,9 @@ export async function render({ master, spec, out, width = 1920, size, crf = 20, 
   const total = Math.round(Math.min(end ?? Infinity, cutLength) * fps);
 
   mkdirSync(dirname(out), { recursive: true });
-  const video = await encoder(out, { width: OW, height: OH, fps, crf, preset: x264 });
+  /* Written beside the render it replaces, and moved into place only once it is whole: an interrupted render leaves the last one alone. */
+  const partial = partialOf(out);
+  const video = await encoder(partial, { width: OW, height: OH, fps, crf, preset: x264 });
   const pool = new WorkerPool(Math.max(1, Math.min(availableParallelism() - 1, 10)));
   /* Decode at most two frames per worker ahead of the encoder, so memory stays flat. */
   const ahead = pool.workers.length * 2;
@@ -167,13 +172,20 @@ export async function render({ master, spec, out, width = 1920, size, crf = 20, 
     while (written < frames && !failures.length) await nextWrite();
     await writing;
     if (failures.length) throw failures[0];
+  } catch (error) {
+    rmSync(partial, { force: true });
+    throw error;
   } finally {
     await pool.close();
     await video.close();
   }
 
-  const encoded = frameCount(out);
-  if (encoded !== frames) throw new Error(`${out} holds ${encoded} frames, but ${frames} were rendered; render it again`);
+  const encoded = frameCount(partial);
+  if (encoded !== frames) {
+    rmSync(partial, { force: true });
+    throw new Error(`${out} would hold ${encoded} frames, but ${frames} were rendered; render it again`);
+  }
+  renameSync(partial, out);
   if (poster && lastFrame) writePoster(posterFrame ?? lastFrame, OW, OH, poster);
   return { out, frames, fps, duration: frames / fps, width: OW, height: OH, warnings, poster: poster?.path };
 }

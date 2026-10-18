@@ -11,7 +11,7 @@ import { availableParallelism } from 'node:os';
 import { renameSync, rmSync, writeFileSync } from 'node:fs';
 import { decodeFrames, encoder, ffmpeg, frameCount } from '../ffmpeg.mjs';
 import { foley, wav } from './foley.mjs';
-import { WorkerPool } from '../render.mjs';
+import { WorkerPool, partialOf } from '../render.mjs';
 import { resolveShots, shotAt } from './shots.mjs';
 import { projection, invert } from './camera.mjs';
 import { pyramid, renderFilmFrame } from './frame.mjs';
@@ -97,7 +97,9 @@ export async function renderFilm({ film, takes, masters, out, onProgress, onStep
   const fps = opts.fps;
   const total = shots.reduce((n, s) => n + Math.round(s.length * fps), 0);
   const pool = new WorkerPool(Math.max(1, Math.min(availableParallelism() - 1, 10)), new URL('./worker.mjs', import.meta.url));
-  const enc = await encoder(out, { width: opts.width, height: opts.height, fps, crf: opts.crf, preset: 'slow', filter: opts.grain ? `noise=c0s=${opts.grain}:c0f=t` : undefined });
+  /* Rendered beside the film it replaces and moved into place only when whole, picture and sound. */
+  const partial = partialOf(out);
+  const enc = await encoder(partial, { width: opts.width, height: opts.height, fps, crf: opts.crf, preset: 'slow', filter: opts.grain ? `noise=c0s=${opts.grain}:c0f=t` : undefined });
   let written = 0;
   let last = null;
   try {
@@ -150,22 +152,30 @@ export async function renderFilm({ film, takes, masters, out, onProgress, onStep
         written += 1;
       }
     }
+  } catch (error) {
+    await enc.close().catch(() => undefined);
+    rmSync(partial, { force: true });
+    throw error;
   } finally {
     await pool.close();
   }
   await enc.close();
-  const frames = frameCount(out);
-  if (frames !== written) throw new Error(`${out} has ${frames} frames, not ${written}; render it again`);
+  const frames = frameCount(partial);
+  if (frames !== written) {
+    rmSync(partial, { force: true });
+    throw new Error(`${out} would have ${frames} frames, not ${written}; render it again`);
+  }
   /* The foley: the hand's presses and keystrokes, cut as the picture is cut, laid under it. */
   if (opts.sound !== false) {
     onStep?.('sound');
     const sound = `${out}.foley.wav`;
     const muxed = `${out}.muxed.mp4`;
     writeFileSync(sound, wav(foley(shots, takes, frames / fps)));
-    ffmpeg(['-i', out, '-i', sound, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', muxed]);
-    renameSync(muxed, out);
+    ffmpeg(['-i', partial, '-i', sound, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k', '-movflags', '+faststart', muxed]);
+    renameSync(muxed, partial);
     rmSync(sound, { force: true });
   }
+  renameSync(partial, out);
   return { frames, duration: frames / fps, shots };
 }
 
