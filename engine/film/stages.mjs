@@ -33,7 +33,9 @@ export function filmFor(project, clip, { redirect = false } = {}) {
   }
   const { film, warnings } = directFilm(clip, take);
   mkdirSync(dirname(clip.paths.film), { recursive: true });
-  writeJson(clip.paths.film, film);
+  /* The same film again leaves the file as it was, so judging a film never makes its render look out of date. */
+  const same = existsSync(clip.paths.film) && JSON.stringify(readJson(clip.paths.film)) === JSON.stringify(film);
+  if (!same) writeJson(clip.paths.film, film);
   return { film, written: clip.paths.film, warnings };
 }
 
@@ -63,29 +65,39 @@ export function launchTake(project, clip) {
   return takeOf(project, clip);
 }
 
-/** Each shot's middle frame, and the judge's notes on them. */
-export async function judgeLaunch(project, clip, { film } = {}) {
+/** Each shot's middle frame, and the judge's notes on them. `onStep('judge', {index, shots})` reports each frame as it starts. */
+export async function judgeLaunch(project, clip, { film, onStep } = {}) {
   const spec = film ?? filmFor(project, clip).film;
   const src = sources(project, clip, spec);
   const shots = resolveShots(src.film, src.takes);
   const frames = [];
-  for (const shot of shots) frames.push(await renderFilmStill({ ...src, index: shot.index, t: shot.length / 2, width: 960, height: 540 }));
+  for (const shot of shots) {
+    onStep?.('judge', { index: shot.index, shots: shots.length });
+    frames.push(await renderFilmStill({ ...src, index: shot.index, t: shot.length / 2, width: 960, height: 540 }));
+  }
   return { notes: judgeFilm(shots, frames, src.takes), shots, frames };
 }
 
-/** Render the clip's launch film and its poster, then judge it. */
-export async function renderLaunch(project, clip, { onProgress, redirect = false } = {}) {
-  const { film, warnings } = filmFor(project, clip, { redirect });
+/**
+ * Render the clip's launch film and its poster, then judge it. `onStep`
+ * reports each step as it starts: 'film' (the spec, from filmFor), the
+ * renderer's 'shot', 'ending' and 'sound', then 'poster' and each 'judge'.
+ */
+export async function renderLaunch(project, clip, { onProgress, onStep, redirect = false } = {}) {
+  const directed = filmFor(project, clip, { redirect });
+  const { film, warnings } = directed;
+  onStep?.('film', directed);
   const src = sources(project, clip, film);
   mkdirSync(project.paths.out, { recursive: true });
-  const result = await renderFilm({ ...src, out: clip.paths.launch, onProgress });
+  const result = await renderFilm({ ...src, out: clip.paths.launch, onProgress, onStep });
   /* The poster is the payoff, or the middle of the film. */
   const shots = result.shots;
+  onStep?.('poster');
   const best = shots.find((s) => s.scale === 'wide') ?? shots[Math.floor(shots.length / 2)];
   const still = await renderFilmStill({ ...src, index: best.index, t: best.length / 2 });
   const width = 1440;
   const height = Math.round((width * still.height) / still.width);
   writeWebp(resample(still.frame, still.width, still.height, width, height, [0, 0, still.width, still.height]), width, height, clip.paths.launchPoster, 85);
-  const judged = await judgeLaunch(project, clip, { film });
-  return { out: clip.paths.launch, poster: clip.paths.launchPoster, duration: result.duration, warnings, notes: judged.notes };
+  const judged = await judgeLaunch(project, clip, { film, onStep });
+  return { out: clip.paths.launch, poster: clip.paths.launchPoster, duration: result.duration, frames: result.frames, warnings, notes: judged.notes, shots: judged.shots, stills: judged.frames };
 }

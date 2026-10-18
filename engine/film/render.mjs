@@ -87,10 +87,11 @@ function task(shot, take, frame, t, opts) {
  *   takes     {name: take file}, for every take the shots are cut from
  *   masters   {name: master path}
  *   ending    the ending to set ({copy, tagline?, logo?, name?}); film.ending when absent
- *   onProgress(done, total)
- * Returns {frames, duration}.
+ *   onProgress(done, total)   frames of the shots written, of all of them
+ *   onStep(name, detail)      'shot' {index, shots, shot} as each shot starts, then 'ending' and 'sound'
+ * Returns {frames, duration, shots}.
  */
-export async function renderFilm({ film, takes, masters, out, onProgress, ...overrides }) {
+export async function renderFilm({ film, takes, masters, out, onProgress, onStep, ...overrides }) {
   const opts = { ...FILM, ...film.output, ...overrides };
   const shots = resolveShots(film, takes);
   const fps = opts.fps;
@@ -101,6 +102,7 @@ export async function renderFilm({ film, takes, masters, out, onProgress, ...ove
   let last = null;
   try {
     for (const shot of shots) {
+      onStep?.('shot', { index: shot.index, shots: shots.length, shot });
       const take = takes[shot.take];
       const n = Math.round(shot.length * fps);
       const mfps = take.master.fps;
@@ -141,6 +143,7 @@ export async function renderFilm({ film, takes, masters, out, onProgress, ...ove
     }
     const ending = overrides.ending ?? film.ending;
     if (ending && last) {
+      onStep?.('ending');
       const set = await setEnding(ending, opts.width, opts.height);
       for (const frame of endingFrames(set, last, opts.width, opts.height, fps)) {
         await enc.write(frame);
@@ -155,6 +158,7 @@ export async function renderFilm({ film, takes, masters, out, onProgress, ...ove
   if (frames !== written) throw new Error(`${out} has ${frames} frames, not ${written}; render it again`);
   /* The foley: the hand's presses and keystrokes, cut as the picture is cut, laid under it. */
   if (opts.sound !== false) {
+    onStep?.('sound');
     const sound = `${out}.foley.wav`;
     const muxed = `${out}.muxed.mp4`;
     writeFileSync(sound, wav(foley(shots, takes, frames / fps)));

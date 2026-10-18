@@ -108,10 +108,12 @@ function writeMaster(project, clip, captured, frameDir, log, { slow = 1 } = {}) 
   return probe(clip.paths.master);
 }
 
-async function takeOnce(project, clip, { log, query }) {
+async function takeOnce(project, clip, { log, query, onStep }) {
   const { meta } = clip;
   const viewport = { width: meta.viewport.width, height: meta.viewport.height };
   const frameDir = join(project.paths.tmp, 'frames', clip.name);
+  const url = clipUrl(project, meta, query);
+  onStep?.('open', { url });
   const browser = await openBrowser({ ...viewport, dpr: meta.viewport.dpr, colorScheme: meta.colorScheme });
   const { page } = browser;
   const take = { project: project.name, clip: clip.name, beats: {}, boxes: {}, notes: [] };
@@ -120,7 +122,6 @@ async function takeOnce(project, clip, { log, query }) {
   h.meta = meta;
   const reloads = watchReloads(page);
   try {
-    const url = clipUrl(project, meta, query);
     const slow = meta.slow ?? 1;
     /* The page's clock has to be in place before its scripts run, so a slow take installs it before loading. */
     if (slow > 1) await page.clock.install();
@@ -129,6 +130,7 @@ async function takeOnce(project, clip, { log, query }) {
     const capture = await startCapture(page, { dir: frameDir, ...viewport, dpr: fit.dpr, quality: presets.master.jpeg });
     const undoSlow = slow > 1 ? await slowDown(page, slow) : null;
     h.clock.zero = capture.zero;
+    onStep?.('film', { now: h.now });
     reloads.on = true;
     let captured;
     try {
@@ -144,6 +146,7 @@ async function takeOnce(project, clip, { log, query }) {
       throw new Error(`the product reloaded during the take (${reloads.seen.join(' | ')}); record again once nothing is editing its files, or set meta.allowReload`);
     }
 
+    onStep?.('stitch', { frames: captured.frames.length });
     const { width, height, duration, fps } = writeMaster(project, clip, captured, frameDir, log, { slow });
     Object.assign(take, {
       recordedAt: new Date().toISOString(),
@@ -176,15 +179,17 @@ async function takeOnce(project, clip, { log, query }) {
  * The product must already answer at `project.base` (see `ensureServer`).
  * @param {object} project from `loadProject`
  * @param {object} clip from `loadClip`
- * @param {{log?: (line: string) => void, query?: Record<string, string>, takes?: number}} [options]
+ * `onStep(name, detail)` reports each step of a take as it starts: 'open'
+ * {url}, 'film' {now: seconds on the take's clock}, then 'stitch' {frames}.
+ * @param {{log?: (line: string) => void, query?: Record<string, string>, takes?: number, onStep?: (name: string, detail: object) => void}} [options]
  */
-export async function record(project, clip, { log = console.log, query = {}, takes } = {}) {
+export async function record(project, clip, { log = console.log, query = {}, takes, onStep } = {}) {
   if (!clip.take) throw new Error(`${clip.name} has nothing to play: scenarios/${clip.name}.mjs needs a default export, the take`);
   requireTools('ffmpeg', 'ffprobe');
   const tries = takes ?? clip.meta.takes;
   for (let attempt = 1; ; attempt += 1) {
     try {
-      return await takeOnce(project, clip, { log, query });
+      return await takeOnce(project, clip, { log, query, onStep });
     } catch (error) {
       if (attempt >= tries) throw error;
       log(`  take ${attempt} of ${tries} rejected: ${error.message}`);
