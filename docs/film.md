@@ -6,16 +6,29 @@ Dolly makes two kinds of video from the same takes, and judges each by its own r
 | --- | --- | --- |
 | What it is | A clip of the product working: flat, legible, the whole screen in view | A film of hero shots: the UI floating in black, tilted, a thin band in focus |
 | For | Docs, READMEs, case studies, onboarding | Launch posts, landing page heroes, feature trailers |
-| Camera | Establish wide, lean in to 1.35, hold still, pull back | Steep close-ups at 2 to 6 times, a slow drift, hard cuts on the action |
+| Camera | Establish wide, lean in to 1.35, hold still, pull back | Steep close-ups at up to 6.5 times, a slow drift, hard cuts on the action |
 | Light | A warm wash over everything but the subject | A pool of light on the subject, falling off into black |
 | Frame rate | 30 fps | 24 fps, with motion blur and fine grain |
 | Ends | On the product | On one line of copy, then a still logo |
 | Command | `dolly render` | `dolly film` |
 | Judged on | The camera notes (soft leans, moves through a change) | A film still's checklist (below) |
 
+## The shots
+
+A film cuts between four scales. Dolly picks each shot's scale from the size of what it looks at, so the subject fills about two fifths of the frame:
+
+| Scale | Magnified | Holds |
+| --- | --- | --- |
+| Extreme close-up, `extreme` | 4.5 to 6.5× | one control: a chip, a status |
+| Close-up, `macro` | 2.6 to 4× | a few rows, a menu |
+| Medium, `medium` | 1.4 to 2.5× | a panel |
+| Wide, `wide` | 0.95× | the whole window, near-frontal |
+
+Every close-up is tilted back with its text on a diagonal, and the diagonal flips on each cut, so two shots in a row never match. The wide shot comes once, in the second half, as the payoff.
+
 ## Record a launch take
 
-A launch film's close-ups magnify the UI up to six times, so the take needs the pixels for it, and enough frames for smooth 24 fps at that size. Give the scenario its own meta:
+A launch film's close-ups magnify the UI up to 6.5 times, so the take needs the pixels for it, and enough frames for smooth 24 fps at that size. Give the scenario its own meta:
 
 ```js
 export const meta = {
@@ -68,11 +81,11 @@ dolly film shop shop-launch --judge
 dolly film shop shop-launch
 ```
 
-`dolly film` writes the shots to `films/<clip>.film.json`, where you can edit them, renders `out/<clip>-film.mp4` and its poster (from the payoff), and judges the film. `--judge` only judges, which is quick: it renders each shot's middle frame.
+`dolly film` writes the shots to `projects/<p>/films/<clip>.film.json`, where you can edit them, renders `out/<p>/<clip>-film.mp4` and its poster (from the payoff), and judges the film. `--judge` only judges, which is quick: it renders each shot's middle frame. A film saved in the Studio is kept; `--redirect` directs it again from the scenario.
 
 ## Direct it in the Studio
 
-`dolly studio <project>` lists every clip; a clip with a film has **Direct the film**. The film editor shows the open shot as the film renderer draws it (drag the time to see any moment of it), every shot in a row under it, and on the right each shot's cut, subject, scale and length, the ending's copy, and the judge. Every picture there is a frame of the real render, of the film as you are editing it, so what you see is what renders. **Save** writes `films/<clip>.film.json` (and marks it directed in the Studio, so directing from the scenario again keeps it); **Render** saves, then makes the film with its sound.
+`dolly studio <project>` lists every clip; a clip with a film has **Direct the film**. The film editor shows the open shot as the film renderer draws it (drag the time to see any moment of it), every shot in a row under it, and on the right each shot's cut, subject, scale and length, the ending's copy, and the judge. Every picture there is a frame of the real render, of the film as you are editing it, so what you see is what renders. **Save** writes `projects/<p>/films/<clip>.film.json` (and marks it directed in the Studio, so directing from the scenario again keeps it); **Render** saves, then makes the film with its sound.
 
 ## The judge
 

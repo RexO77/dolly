@@ -14,6 +14,8 @@ It does three things:
 | **Direct** | Dolly decides where the camera looks and when: wide, lean in, hold still, pull back. |
 | **Render** | Dolly turns the recording and the camera into a video file and a still image for your site. |
 
+The same take makes two kinds of video: a demo clip (`dolly render`), flat and legible, for docs and case studies, and a launch film (`dolly film`), hero shots in a black void, for launch day. See [Launch films](film.md).
+
 Each step saves a file, and the next step starts from that file. So you can change the camera without recording again, or render again without touching anything else.
 
 ```
@@ -407,6 +409,7 @@ The work splits like this:
 | `dolly studio <product> <clip> --text` | prints the camera as a shot list | a quick check in the terminal |
 | `dolly direct <product> [clip]` | rebuilds the camera from the saved take | after changing a scenario's `direction` |
 | `dolly render <product> [clip]` | makes the final video and poster in `out/` | when the camera is right |
+| `dolly film <product> [clip]` | makes the clip's launch film and judges it (`--judge` only judges) | when a scenario exports `film` |
 | `dolly poster <product> <clip> --at S` | remakes only the poster, from S seconds in | when the poster shows the wrong moment |
 | `dolly deliver <product> [clip]` | copies the clip and poster to your site's folder (`--yes` to replace) | when it is ready to ship |
 | `dolly stills <product>` | takes still screenshots listed in the project's `stills.mjs` | for images, not video |

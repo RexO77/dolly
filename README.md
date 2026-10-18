@@ -80,6 +80,7 @@ Dolly starts the product's dev server when it needs it and stops it afterwards. 
 - Put the clip in a frame: a card on a background, in a browser window if you like, that grows to fill the clip as the camera leans in.
 - Every action has a quiet sound, from the lens ticking to two soft bells when a render finishes. The speaker in the bar turns them off.
 - **Save** writes the clip's camera. **Render** makes the clip and shows it beside the preview. A camera you saved stays yours: recording again keeps it.
+- A clip with a launch film has **Direct the film**: every shot as the film renders it, its cut, subject, scale and length, the ending's copy, and the judge.
 
 ### With an agent: the CLI and the skill
 
@@ -134,6 +135,7 @@ Each stage re-runs from what the last one wrote, so you can re-direct or re-rend
 | `dolly studio <project> [clip]` | open the Studio (`--open`, `--port N`), or print shot lists (`--text`) |
 | `dolly render <project> [clip...]` | render clips and their posters into `out/` |
 | `dolly deliver <project> [clip...]` | copy renders to the folder they ship from (`--yes` to replace, `--stills`) |
+| `dolly film <project> [clip...]` | make a clip's launch film and judge it (`--judge` only judges, `--redirect`) |
 | `dolly list [project]` | show the projects, their clips and where each stands |
 | `dolly direct <project> [clip...]` | rebuild cameras from saved takes (`--redirect` for Studio cameras too) |
 | `dolly poster <project> <clip> --at S` | take the poster from one moment |
@@ -157,6 +159,7 @@ The spotlight is a wash: a warm paper colour at 72% over everything but the subj
 - [How Dolly works](docs/how-it-works.md): the whole idea, in plain words
 - [Scenarios](docs/scenarios.md): writing the take: `h`, the hand, `meta`, `direction`
 - [The camera](docs/camera.md): the camera file, its keyframes, washes and cuts, and the grammar
+- [Launch films](docs/film.md): launch mode, from recording for it to the shots, the Studio's film editor and the judge
 - [Workflow](docs/workflow.md): what each stage reads and writes, and re-cutting after a product change
 - [Workspaces](docs/workspaces.md): `dolly.json`, `project.json`, hooks and stills
 - [Agents](docs/agents.md): the skill, what an agent does, prompts

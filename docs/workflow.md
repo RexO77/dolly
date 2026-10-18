@@ -49,7 +49,7 @@ dolly studio shop shop-first --open   # and open it in your browser
 dolly studio shop --text              # every clip's shot list, printed
 ```
 
-The Studio plays the master through its camera live. The camera reads as a shot list; open a shot and it plays on repeat, and each change replays it. Retime on the film strip, frame on the picture or on a measured box, and set the zoom and the curve. Notes flag what breaks the grammar or goes soft, each with a fix. **Save** writes the camera file, marked as saved in the Studio; **Render** renders the clip and shows it beside the preview. The Studio writes nothing else.
+The Studio plays the master through its camera live. The camera reads as a shot list; open a shot and it plays on repeat, and each change replays it. Retime on the film strip, frame on the picture or on a measured box, and set the zoom and the curve. Notes flag what breaks the grammar or goes soft, each with a fix. **Save** writes the camera file, marked as saved in the Studio; **Render** renders the clip and shows it beside the preview. A clip with a film also has **Direct the film**, where Save writes the film file and Render makes the film. The Studio writes nothing else.
 
 `--text` prints the same shot list, with the take's beats on the same timeline:
 
@@ -69,6 +69,15 @@ dolly render shop                         # every recorded clip
 ```
 
 Every frame of the master goes through the camera and into the encoder. The project's preset sets the delivery: `web-1920` is 1920 wide at CRF 20, with a 1440-wide WebP poster. A clip's `meta.output` overrides any of it. The poster is the last frame (the finished state, held wide), or the frame `meta.poster` seconds in.
+
+## Film
+
+```sh
+dolly film shop shop-launch               # direct, render and judge the launch film
+dolly film shop shop-launch --judge       # only judge it: each shot's middle frame
+```
+
+Launch mode, from a scenario that exports `film`: the shots go to `projects/<p>/films/<clip>.film.json`, the film to `out/<p>/<clip>-film.mp4` with its poster. A film saved in the Studio is kept unless `--redirect`. See [film.md](film.md).
 
 ## Poster
 
