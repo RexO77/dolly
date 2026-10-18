@@ -6,6 +6,7 @@ import { storyboard as shotList, formatStoryboard } from '../../engine/storyboar
 import { readJson } from '../../engine/files.mjs';
 import { startStudio } from '../../engine/studio.mjs';
 import { numberFlag } from '../util.mjs';
+import { engineLog } from '../steps.mjs';
 
 export const usage = 'studio <project> [clip]';
 export const summary = 'Watch, direct and render a clip in the Studio';
@@ -23,42 +24,43 @@ export const examples = ['dolly studio shop shop-first --open', 'dolly studio sh
 export const aliases = ['storyboard'];
 
 /** Open a URL in the default browser, on macOS, Windows or Linux. */
-function openInBrowser(url, log) {
+function openInBrowser(url, ui) {
   const [cmd, ...args] = process.platform === 'darwin' ? ['open', url]
     : process.platform === 'win32' ? ['cmd', '/c', 'start', '', url]
       : ['xdg-open', url];
   const child = spawn(cmd, args, { stdio: 'ignore', detached: true });
-  child.on('error', () => log(`could not open a browser; open ${url} yourself`));
+  child.on('error', () => ui.note(`could not open a browser; open ${url} yourself`, null, { indent: 0 }));
   child.unref();
 }
 
-async function printShotLists(p, patterns, log) {
+async function printShotLists(p, patterns, ui) {
   for (const name of matchClips(p, patterns, { recorded: true })) {
     const clip = await loadClip(p, name);
     const take = existsSync(clip.paths.take) ? readJson(clip.paths.take) : null;
     const spec = specFor(clip);
     const from = existsSync(clip.paths.camera) ? p.workspace.rel(clip.paths.camera) : 'no camera file, so wide throughout';
-    log(`${name}  (${from}${take ? '' : '; no take file, so no beats'})`);
-    if (spec.source?.cut) log(`  cuts ${spec.source.cut.from}s to ${spec.source.cut.to}s of the master, with a ${spec.source.cut.fade ?? 0.25}s crossfade`);
-    if (spec.source?.end) log(`  ends at ${spec.source.end}s of the master`);
-    log(`${formatStoryboard(shotList(spec, take))}\n`);
+    ui.line(`${ui.bold(name)}  ${ui.dim(`${from}${take ? '' : '; no take file, so no beats'}`)}`);
+    if (spec.source?.cut) ui.info(`cuts ${spec.source.cut.from}s to ${spec.source.cut.to}s of the master, with a ${spec.source.cut.fade ?? 0.25}s crossfade`);
+    if (spec.source?.end) ui.info(`ends at ${spec.source.end}s of the master`);
+    ui.line(`${formatStoryboard(shotList(spec, take))}\n`);
   }
 }
 
-export default async function studio({ args: [name, ...patterns], flags, project, log }) {
+export default async function studio({ args: [name, ...patterns], flags, project, ui }) {
   const p = await project(name);
-  if (flags.text) return printShotLists(p, patterns, log);
+  if (flags.text) return printShotLists(p, patterns, ui);
   const clip = patterns[0] && matchClips(p, [patterns[0]], { recorded: true })[0];
   const port = numberFlag(flags, 'port', { integer: true, min: 1 }) ?? 4800;
   let url;
   try {
-    ({ url } = await startStudio(p, { port, log, dev: Boolean(flags.dev) }));
+    ({ url } = await startStudio(p, { port, log: engineLog(ui), dev: Boolean(flags.dev) }));
   } catch (error) {
     if (error.code === 'EADDRINUSE') throw new Error(`port ${port} is taken (another Studio, maybe); stop it, or pass --port ${port + 1}`, { cause: error });
     throw error;
   }
   const address = clip ? `${url}/?clip=${encodeURIComponent(clip)}` : url;
-  log(`the Studio for ${p.name} is at ${address}\npress ctrl-c to stop it`);
-  if (flags.open) openInBrowser(address, log);
+  ui.ok(`the Studio for ${p.name} is at ${address}`, null, { indent: 0 });
+  ui.info('press ctrl-c to stop it', null, { indent: 0 });
+  if (flags.open) openInBrowser(address, ui);
   return new Promise(() => {});
 }

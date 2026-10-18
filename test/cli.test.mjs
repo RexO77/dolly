@@ -131,3 +131,25 @@ test('the product is read for its framework, pinned port and start command', () 
   assert.equal(aliasFor('shop', new Set()), null);
   assert.equal(aliasFor('field-notes', new Set(['fn'])), null);
 });
+
+test('list shows each clip\'s demo and its launch film, and the next thing to run', () => {
+  const ws = scratch();
+  dolly(ws, 'init');
+  const project = join(ws, 'projects', 'shop');
+  const at = (...parts) => {
+    mkdirSync(join(...parts.slice(0, -1)), { recursive: true });
+    return join(...parts);
+  };
+  writeFileSync(at(project, 'project.json'), JSON.stringify({ name: 'shop', base: 'http://localhost:5999' }));
+  writeFileSync(at(project, 'scenarios', 'shop-first.mjs'), 'export const direction = {};\nexport default async () => {};\n');
+  writeFileSync(at(project, 'scenarios', 'shop-launch.mjs'), 'export const film = { shots: [] };\nexport default async () => {};\n');
+  writeFileSync(at(project, 'films', 'shop-launch.film.json'), JSON.stringify({ directed: 'studio', shots: [] }));
+  writeFileSync(at(ws, 'masters', 'shop', 'shop-launch.mp4'), '');
+  writeFileSync(at(ws, 'out', 'shop', 'shop-launch-film.mp4'), '');
+  const r = dolly(ws, 'list');
+  assert.equal(r.code, 0, r.err);
+  assert.match(r.out, /clip +take +demo +launch film/);
+  assert.match(r.out, /shop-first +not recorded +not rendered +camera from its scenario, once recorded +·\n/);
+  assert.match(r.out, /shop-launch +recorded +· +rendered +film from the Studio\n/);
+  assert.match(r.out, /next {2}dolly record shop shop-first/);
+});

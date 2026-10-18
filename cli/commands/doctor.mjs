@@ -71,19 +71,20 @@ const reason = (error) => (error.code === 'ENOENT' ? 'not found on your PATH' : 
 
 const run = (bin, args) => execFileSync(bin, args, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
 
-export default async function doctor({ args: [name], workspace, project, log }) {
+export default async function doctor({ args: [name], workspace, project, ui }) {
   const os = system();
   const failed = [];
   const missing = new Set();
-  const line = (mark, label, detail) => log(`  ${mark.padEnd(5)} ${label.padEnd(10)} ${detail}`);
-  const pass = (label, detail) => line('ok', label, detail);
+  const row = (symbol, label, detail) => ui.line(`  ${symbol} ${label.padEnd(9)} ${detail}`);
+  const pass = (label, detail) => row(ui.wash(ui.sym.ok), label, ui.dim(detail));
+  const skip = (label, detail) => row(ui.dim(ui.sym.dot), label, ui.dim(detail));
   const fail = (label, detail, fix) => {
     failed.push(label);
-    line('FAIL', label, detail);
-    log(`  ${''.padEnd(16)} fix: ${fix}`);
+    row(ui.red(ui.sym.fail), label, detail);
+    ui.line(`  ${' '.repeat(12)}${ui.dim('fix:')} ${fix}`);
   };
 
-  log('This machine');
+  ui.header('This machine');
   const floor = nodeFloor();
   const [major, minor] = process.versions.node.split('.').map(Number);
   if (major > floor.major || (major === floor.major && minor >= floor.minor)) pass('Node', `${process.version} (Dolly needs ${floor.range})`);
@@ -101,7 +102,7 @@ export default async function doctor({ args: [name], workspace, project, log }) 
   };
   const hasFfmpeg = tool('ffmpeg', 'ffmpeg', 'ffmpeg');
   tool('ffprobe', 'ffprobe', 'ffmpeg');
-  if (!hasFfmpeg) line('--', 'libx264', 'not checked: it needs ffmpeg');
+  if (!hasFfmpeg) skip('libx264', 'not checked: it needs ffmpeg');
   else if (/^\s*V\S*\s+libx264\s/m.test(run('ffmpeg', ['-hide_banner', '-encoders']))) pass('libx264', 'ffmpeg can encode H.264');
   else {
     missing.add('ffmpeg');
@@ -109,38 +110,47 @@ export default async function doctor({ args: [name], workspace, project, log }) 
   }
   tool('cwebp', 'cwebp', 'webp');
 
+  const starting = ui.step('starting Chrome');
   try {
     const browser = await launchHeadless({ timeout: 30_000 });
+    starting.clear();
     pass('Chrome', `${browser.version()}${process.env.DOLLY_CHROME ? ` (DOLLY_CHROME=${process.env.DOLLY_CHROME})` : ''}`);
     await browser.close();
   } catch (error) {
+    starting.clear();
     const detail = error.cause?.message.split('\n')[0] ?? error.message;
     if (process.env.DOLLY_CHROME) fail('Chrome', `DOLLY_CHROME=${process.env.DOLLY_CHROME} did not start (${detail})`, 'point DOLLY_CHROME at a Google Chrome binary, or unset it to use the installed Chrome');
     else fail('Chrome', 'Google Chrome is not installed where Dolly looks', `${CHROME[os]}; or set DOLLY_CHROME to the path of a Chrome binary`);
   }
 
-  log('\nWorkspace');
+  ui.line();
+  ui.header('Workspace');
   let ws = null;
+  let projects = [];
   try {
     ws = workspace();
     pass('folder', displayPath(ws.root));
   } catch (error) {
-    line('--', 'folder', error.message);
+    skip('folder', error.message);
   }
   if (ws) {
-    const projects = name ? [await project(name)] : await Promise.all(listProjects(ws).map((p) => project(p.name)));
-    if (!projects.length) line('--', 'projects', 'none yet: `dolly init <name> --from <repo>` adds one');
+    projects = name ? [await project(name)] : await Promise.all(listProjects(ws).map((p) => project(p.name)));
+    if (!projects.length) skip('projects', 'none yet: `dolly init <name> --from <repo>` adds one');
     for (const p of projects) {
       const scenarios = listClips(p).length;
-      const about = `${p.base}, ${scenarios} scenario${scenarios === 1 ? '' : 's'}`;
-      if (await isUp(p.base)) pass(p.name, `${about}, running`);
-      else line('down', p.name, `${about}: ${p.start ? 'Dolly starts it when it needs it' : 'not running, and it has no start command, so start it yourself'}`);
+      const about = `${p.base} ${ui.sym.dot} ${scenarios} scenario${scenarios === 1 ? '' : 's'}`;
+      if (await isUp(p.base)) pass(p.name, `${about} ${ui.sym.dot} running`);
+      else skip(p.name, `${about} ${ui.sym.dot} ${p.start ? 'not running: Dolly starts it when it needs it' : 'not running, and it has no start command, so start it yourself'}`);
     }
   }
 
+  ui.line();
   if (failed.length) {
-    log(`\n${failed.length} check${failed.length > 1 ? 's' : ''} failed (${failed.join(', ')}). Run each fix above, then \`dolly doctor\` again.`);
-    if (missing.size > 1 && INSTALL[os]) log(`Both packages in one go: ${INSTALL[os]} ${[...missing].map((t) => PACKAGES[t][os]).join(' ')}`);
+    ui.fail(`${failed.length} check${failed.length > 1 ? 's' : ''} failed (${failed.join(', ')}). Run each fix above, then \`dolly doctor\` again.`, null, { indent: 0 });
+    if (missing.size > 1 && INSTALL[os]) ui.line(`  ${ui.dim('both packages in one go:')} ${INSTALL[os]} ${[...missing].map((t) => PACKAGES[t][os]).join(' ')}`);
     process.exitCode = 1;
-  } else log('\nAll set. This machine has everything Dolly needs to record, render and deliver.');
+    return;
+  }
+  ui.ok('All set. This machine has everything Dolly needs to record, render and deliver.', null, { indent: 0 });
+  ui.summary([['next', !ws ? 'dolly init' : projects.length ? `dolly list${name ? ` ${name}` : ''}` : 'dolly init <name> --from <repo>']]);
 }

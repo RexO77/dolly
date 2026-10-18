@@ -16,26 +16,31 @@ export const flags = [
 ];
 export const examples = ['dolly deliver shop shop-first', 'dolly deliver shop --yes', 'dolly deliver shop --stills'];
 
-export default async function deliver({ args: [name, ...patterns], flags, project, log }) {
+export default async function deliver({ args: [name, ...patterns], flags, project, ui }) {
   const p = await project(name);
+  const handle = p.alias ?? p.name;
   const done = { copied: [], same: [], held: [] };
   const add = (result) => Object.keys(done).forEach((key) => done[key].push(...result[key]));
   if (flags.stills) {
     const result = await deliverStills(p, { filter: patterns[0], overwrite: flags.yes });
     add(result);
-    if (result.missing.length) log(`not shot yet, so not delivered: ${result.missing.join(', ')} (dolly stills ${p.alias ?? p.name})`);
+    if (result.missing.length) ui.note(`not shot yet, so not delivered: ${result.missing.join(', ')} (\`dolly stills ${handle}\`)`, null, { indent: 0 });
   } else {
     for (const clipName of matchClips(p, patterns, { recorded: true })) {
       const clip = await loadClip(p, clipName);
       if (existsSync(clip.paths.out)) add(deliverClip(p, clip, { overwrite: flags.yes }));
-      else if (patterns.length) log(`${clipName}: not rendered yet, skipped (dolly render ${p.alias ?? p.name} ${clipName})`);
+      else if (patterns.length) ui.info(`${clipName}: not rendered yet, skipped (\`dolly render ${handle} ${clipName}\`)`, null, { indent: 0 });
     }
   }
-  done.copied.forEach((file) => log(`copied ${displayPath(file)}`));
-  if (done.same.length) log(`${done.same.length} file${done.same.length > 1 ? 's were' : ' was'} already up to date`);
-  if (!done.copied.length && !done.same.length && !done.held.length) log('nothing to deliver: render something first');
+  if (done.same.length) ui.info(`${done.same.length} file${done.same.length > 1 ? 's were' : ' was'} already up to date`, null, { indent: 0 });
+  if (!done.copied.length && !done.same.length && !done.held.length) ui.info('nothing to deliver: render something first', null, { indent: 0 });
   if (done.held.length) {
-    log(`\nkept ${done.held.length} delivered file${done.held.length > 1 ? 's' : ''} that differ${done.held.length > 1 ? '' : 's'} from the new one${done.held.length > 1 ? 's' : ''}. Pass --yes to replace ${done.held.length > 1 ? 'them' : 'it'}:`);
-    done.held.forEach((file) => log(`  ${displayPath(file)}`));
+    const many = done.held.length > 1;
+    ui.note(`kept ${done.held.length} delivered file${many ? 's' : ''} that differ${many ? '' : 's'} from the new one${many ? 's' : ''}; pass --yes to replace ${many ? 'them' : 'it'}`, null, { indent: 0 });
+    done.held.forEach((file) => ui.line(`  ${displayPath(file)}`));
   }
+  ui.summary([
+    ['copied', done.copied.map((file) => displayPath(file))],
+    ['next', done.held.length ? `dolly deliver ${[handle, ...patterns].join(' ')}${flags.stills ? ' --stills' : ''} --yes` : null],
+  ]);
 }

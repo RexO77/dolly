@@ -55,8 +55,6 @@ export function numberFlag(flags, name, { integer = false, min = 0 } = {}) {
   return value;
 }
 
-export const log = (...lines) => console.log(...lines);
-
 /** Seconds as `1.25s`. */
 export const seconds = (s) => `${s.toFixed(2)}s`;
 
@@ -68,23 +66,14 @@ export function displayPath(path) {
   return path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path;
 }
 
-/** A one-line percentage on a terminal; nothing when the output is piped. */
-export function progress(label) {
-  if (!process.stdout.isTTY) return undefined;
-  return (done, total) => {
-    process.stdout.write(`\r  ${label} ${Math.min(100, Math.round((done / Math.max(total, 1)) * 100))}%`);
-    if (done >= total) process.stdout.write('\r\x1b[K');
-  };
-}
-
-/** The context a command runs with. The workspace is loaded only when a command asks for it. */
-export function context(args, flags) {
+/** The context a command runs with: its output (`ui`, see ui.mjs), and the workspace, loaded only when a command asks for it. */
+export function context(args, flags, ui) {
   let workspace;
   const loadedWorkspace = () => (workspace ??= loadWorkspace({ workspace: flags.workspace }));
   return {
     args,
     flags,
-    log,
+    ui,
     workspace: loadedWorkspace,
     async project(name) {
       if (!name) throw new Error('name a project first; `dolly list` shows them');

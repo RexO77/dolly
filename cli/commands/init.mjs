@@ -13,6 +13,7 @@ import { WORKSPACE_FILE, expand, findRoot, loadWorkspace } from '../../engine/wo
 import { readJson, writeJson } from '../../engine/files.mjs';
 import { DEV_SCRIPTS, FRAMEWORKS, aliasFor, configPort, framework, localPort, packageManager, scriptPort, startCommand } from '../product.mjs';
 import { displayPath } from '../util.mjs';
+import { columns } from '../ui.mjs';
 
 export const usage = 'init [project]';
 export const summary = 'Make a workspace, or add a product to it';
@@ -33,7 +34,7 @@ const NAME = /^[\w][\w.-]*$/;
 const tilde = (path) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path);
 
 /** Make `dir` a workspace: dolly.json, projects/, and .gitignore lines for what is rebuilt. */
-function makeWorkspace(dir, log) {
+function makeWorkspace(dir, ui) {
   const inside = findRoot(dir);
   if (inside) {
     const where = inside === dir ? `${displayPath(dir)} is already a Dolly workspace` : `${displayPath(dir)} is inside the workspace at ${displayPath(inside)}`;
@@ -49,12 +50,12 @@ function makeWorkspace(dir, log) {
     writeFileSync(gitignore, `${head}# Takes and renders are large and rebuilt from projects/; projects/ is what to keep.\n${missing.join('\n')}\n`);
   }
   if (existsSync(join(dir, 'package.json')) && dir !== PACKAGE.replace(/\/$/, '')) {
-    log('note: this folder has a package.json. A workspace usually sits beside the product it records, not inside it.');
+    ui.note('this folder has a package.json. A workspace usually sits beside the product it records, not inside it.', null, { indent: 0 });
   }
-  log(`made a Dolly workspace in ${displayPath(dir)}: ${WORKSPACE_FILE}, projects/, and a .gitignore for ${IGNORE.join(' ')}`);
+  ui.ok(`made a Dolly workspace in ${displayPath(dir)}`, `${WORKSPACE_FILE}, projects/, and a .gitignore for ${IGNORE.join(' ')}`, { indent: 0 });
 }
 
-export default async function init({ args, flags: options, log }) {
+export default async function init({ args, flags: options, ui }) {
   const tty = Boolean(process.stdin.isTTY && process.stdout.isTTY);
   const rl = tty ? createInterface({ input: process.stdin, output: process.stdout }) : null;
   const ask = async (question, fallback = '') => {
@@ -62,21 +63,25 @@ export default async function init({ args, flags: options, log }) {
     return answer || fallback;
   };
   try {
-    if (!args.length && !options.from && !options.base) return makeWorkspace(resolve(expand(options.workspace) ?? process.cwd()), log);
-    await addProject({ name: args[0], options, tty, ask, log });
+    if (!args.length && !options.from && !options.base) {
+      makeWorkspace(resolve(expand(options.workspace) ?? process.cwd()), ui);
+      ui.summary([['next', 'dolly init <project> --from <repo>']]);
+      return;
+    }
+    await addProject({ name: args[0], options, tty, ask, ui });
   } finally {
     rl?.close();
   }
 }
 
 /** Find the workspace to add to, offering to make the current folder one on a terminal. */
-async function workspaceFor(options, tty, ask, log) {
+async function workspaceFor(options, tty, ask, ui) {
   if (!findRoot() && !options.workspace && !process.env.DOLLY_WORKSPACE) {
     const here = process.cwd();
     if (!tty || !/^y/i.test(await ask(`there is no Dolly workspace here or above; make ${displayPath(here)} one?`, 'y'))) {
       throw new Error('this folder is not in a Dolly workspace. Run `dolly init` in the folder that should hold your clips (beside the product, not in it), then `dolly init <project> --from <repo>` there');
     }
-    makeWorkspace(here, log);
+    makeWorkspace(here, ui);
   }
   return loadWorkspace({ workspace: options.workspace });
 }
@@ -102,9 +107,9 @@ async function locateProduct(options, tty, ask) {
   return { from, base };
 }
 
-async function addProject({ name, options, tty, ask, log }) {
+async function addProject({ name, options, tty, ask, ui }) {
   if (options.alias && !NAME.test(options.alias)) throw new Error(`"${options.alias}" cannot be an alias: use letters, digits, - . _`);
-  const ws = await workspaceFor(options, tty, ask, log);
+  const ws = await workspaceFor(options, tty, ask, ui);
   const inferred = [];
   const note = (key, value, why) => inferred.push([key, value, why]);
   const { from, base: givenBase } = await locateProduct(options, tty, ask);
@@ -169,7 +174,7 @@ async function addProject({ name, options, tty, ask, log }) {
     while (usedPorts.has(port)) port += 1;
     portWhy = `${portWhy}, moved from ${was}: ${usedPorts.get(was)} serves there`;
   } else if (port && usedPorts.has(port)) {
-    log(`warning: ${usedPorts.get(port)} also serves on port ${port}; record one at a time, or Dolly will record whichever is up`);
+    ui.note(`${usedPorts.get(port)} also serves on port ${port}; record one at a time, or Dolly will record whichever is up`, null, { indent: 0 });
   }
 
   const base = givenBase ?? `http://localhost:${port}`;
@@ -217,21 +222,26 @@ async function addProject({ name, options, tty, ask, log }) {
     writeFileSync(scenario, template.replaceAll('__PROJECT__', handle).replaceAll('__CLIP__', clip));
   }
 
+  /* What was inferred, and why: the reasons line up, except past a value too long to wait for. */
   const keyWidth = Math.max(...inferred.map(([key]) => key.length));
   const valueWidth = Math.min(44, Math.max(...inferred.map(([, value]) => String(value).length)));
-  log(`added ${name}${alias ? ` (${alias})` : ''} to the workspace in ${displayPath(ws.root)}\n`);
-  for (const [key, value, why] of inferred) log(`  ${key.padEnd(keyWidth)}  ${String(value).padEnd(valueWidth)}  ${why}`.trimEnd());
-  log(`\nwrote
-  ${displayPath(join(dir, 'project.json'))}
-  ${displayPath(scenario)}${keptScenario ? ' (it was already there, so it is kept as it was)' : ''}
-  ${displayPath(join(dir, 'cameras'))}/`);
+  ui.ok(`added ${name}${alias ? ` (${alias})` : ''} to the workspace in ${displayPath(ws.root)}`, null, { indent: 0 });
+  ui.line();
+  for (const [key, value, why] of inferred) ui.line(`  ${ui.dim(key.padEnd(keyWidth))}  ${String(value).padEnd(valueWidth)}  ${ui.dim(why)}`.trimEnd());
   const steps = [
     [`dolly inspect ${handle}`, "list the page's controls, with their boxes, and a screenshot"],
     [`edit ${displayPath(scenario)}`, 'set TARGET and PANEL from what inspect lists, and the TIMING'],
     [`dolly record ${handle} ${clip}`, 'record a take in the real product, and its camera'],
     [`dolly studio ${handle} ${clip}`, 'watch the camera over the take, direct it, render'],
   ];
-  const stepWidth = Math.max(...steps.map(([step]) => step.length));
-  log(`\nnext\n${steps.map(([step, why]) => `  ${step.padEnd(stepWidth)}  ${why}`).join('\n')}`);
-  log(`\nBefore \`dolly deliver\`, name a folder under "deliver" in project.json, like "default": "~/site/public/media".`);
+  ui.summary([
+    ['made', [
+      displayPath(join(dir, 'project.json')),
+      ui.pair(displayPath(scenario), keptScenario ? 'it was already there, so it is kept as it was' : null),
+      `${displayPath(join(dir, 'cameras'))}/`,
+    ]],
+    ['next', columns(steps.map(([step, why]) => [step, ui.dim(why)]))],
+  ]);
+  ui.line();
+  ui.info('before `dolly deliver`, name a folder under "deliver" in project.json, like "default": "~/site/public/media"', null, { indent: 0 });
 }
