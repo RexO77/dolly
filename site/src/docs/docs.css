@@ -38,9 +38,17 @@
 .side-kids { margin: 2px 0 6px 10px !important; padding-inline-start: 10px !important; box-shadow: inset 1px 0 0 var(--line-2); }
 .side-kids a { min-height: 30px; font-size: 13px; font-weight: 450; color: var(--text-3); }
 @media (hover: hover) and (pointer: fine) { .side a:hover { background: var(--fill); color: var(--text-1); } .toc a:hover { color: var(--text-1); } }
-.toc a { display: block; padding: 5px 10px; border-radius: 6px; color: var(--text-3); font-size: 13px; line-height: 1.4; text-decoration: none; box-shadow: inset 1.5px 0 0 var(--line); transition: color 150ms ease-out, box-shadow 150ms ease-out; }
-.toc .d3 a { padding-inline-start: 22px; font-size: 12.5px; }
-.toc a[aria-current="location"] { color: var(--text-1); box-shadow: inset 1.5px 0 0 var(--wash-line); }
+.toc-list { position: relative; }
+.toc a { position: relative; display: block; padding: 5px 8px; padding-inline-start: 19px; color: var(--text-3); font-size: 13px; line-height: 1.4; text-decoration: none; transition: color 150ms ease-out; }
+.toc .d3 a { padding-inline-start: 31px; font-size: 12.5px; }
+.toc a[aria-current="location"] { color: var(--text-1); }
+.toc-path { position: absolute; inset: 0 auto auto 0; overflow: visible; pointer-events: none; }
+.toc-path path { fill: none; stroke-width: 1.25; stroke-dasharray: 1 5; stroke-linecap: round; stroke-linejoin: round; }
+.toc-path-rest { stroke: var(--text-4); }
+.toc-path-reached { stroke: var(--text-3); }
+.toc-node { fill: var(--page); stroke: var(--text-4); stroke-width: 1.25; }
+.toc-node.reached { fill: var(--text-3); stroke: var(--text-3); }
+.toc-cursor { position: absolute; top: 0; left: 0; margin: -4px; border-radius: 50%; background: var(--wash-line); box-shadow: 0 0 0 2px var(--page); pointer-events: none; }
 
 /* ── The page ── */
 .doc { min-width: 0; padding: 44px 0 64px; }
@@ -49,6 +57,12 @@
 .doc-links { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 14px 0 0; font-size: 13px; }
 .doc-links a { display: inline-flex; align-items: center; min-height: 32px; color: var(--text-3); text-decoration: none; transition: color 150ms ease-out; }
 @media (hover: hover) and (pointer: fine) { .doc-links a:hover { color: var(--text-1); } }
+.copy-ai { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 32px; margin-inline-start: auto; padding: 0 11px; border: 1px solid transparent; border-radius: var(--radius); background: linear-gradient(var(--page), var(--page)) padding-box, linear-gradient(115deg, color-mix(in oklch, var(--wash-line) 30%, var(--line)), color-mix(in oklch, var(--text-3) 12%, var(--line)) 48%, light-dark(oklch(0.65 0.04 290 / 0.25), oklch(0.8 0.04 290 / 0.25))) border-box; color: var(--text-2); font-size: 12.5px; white-space: nowrap; transition: color 150ms ease-out; }
+.copy-ai .ok, .copy-ai.done .cp { display: none; }
+.copy-ai.done .ok { display: block; }
+.copy-ai:disabled { cursor: progress; }
+@media (hover: hover) and (pointer: fine) { .copy-ai:hover { color: var(--text-1); } }
+@media (prefers-reduced-motion: reduce) { .toc a, .copy-ai { transition: none; } }
 
 .prose { --measure: 68ch; margin-top: 28px; font-size: 15.5px; line-height: 1.65; color: var(--text-2); }
 .prose > :where(p, ul, ol, h2, h3, h4, blockquote, .table-wrap, .doc-code) { max-width: var(--measure); }

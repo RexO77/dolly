@@ -14,6 +14,7 @@ import { sound } from '../../../studio/src/ui/sound.js';
 import { initSound } from '../hooks.js';
 import { Search } from './Search.jsx';
 import { Visual } from './visuals.jsx';
+import { RailToc } from './RailToc.jsx';
 
 initSound();
 
@@ -59,32 +60,40 @@ document.addEventListener('click', async (e) => {
   }, 1500);
 });
 
-/* ── On this page: the heading you are reading ── */
-const tocLinks = [...document.querySelectorAll('.toc a')];
-const headings = tocLinks.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
-let ticking = false;
-const track = () => {
-  ticking = false;
-  const line = 120;
-  let current = headings[0];
-  for (const h of headings) if (h.getBoundingClientRect().top <= line) current = h;
-  const atEnd = innerHeight + scrollY >= document.documentElement.scrollHeight - 4;
-  if (atEnd) current = headings[headings.length - 1];
-  for (const a of tocLinks) {
-    const on = current && a.hash === `#${current.id}`;
-    if (on) a.setAttribute('aria-current', 'location');
-    else a.removeAttribute('aria-current');
+/* ── Copy the page's complete Markdown for an AI session ── */
+const copyAI = document.querySelector('[data-copy-ai]');
+let copyReset;
+copyAI?.addEventListener('click', async () => {
+  if (copyAI.disabled) return;
+  clearTimeout(copyReset);
+  const label = copyAI.querySelector('[data-copy-ai-label]');
+  copyAI.disabled = true;
+  label.textContent = 'Copying…';
+  try {
+    const response = await fetch(copyAI.dataset.copyAi);
+    if (!response.ok) throw new Error(`Markdown request failed: ${response.status}`);
+    await navigator.clipboard.writeText(await response.text());
+    sound.select();
+    copyAI.classList.add('done');
+    label.textContent = 'Copied Markdown';
+  } catch {
+    label.textContent = 'Copy failed. Retry';
+  } finally {
+    copyAI.disabled = false;
+    copyReset = setTimeout(() => {
+      copyAI.classList.remove('done');
+      label.textContent = 'Copy for AI';
+    }, 2200);
   }
-};
-if (headings.length) {
-  addEventListener('scroll', () => {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(track);
-    }
-  }, { passive: true });
-  track();
-}
+});
+
+/* ── The dotted path follows the reading position ── */
+const toc = document.querySelector('.toc');
+const tocItems = [...toc.querySelectorAll('li')].map((row) => {
+  const link = row.querySelector('a');
+  return { id: decodeURIComponent(link.hash.slice(1)), label: link.textContent, depth: row.classList.contains('d3') ? 1 : 0 };
+});
+if (tocItems.length) createRoot(toc).render(<RailToc items={tocItems} />);
 
 /* ── The phone menu ── */
 const menu = document.querySelector('[data-menu]');
