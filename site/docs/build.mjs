@@ -246,6 +246,19 @@ function tocHtml(toc) {
   return `<p class="toc-title">On this page</p><ul>${items.map((t) => `<li class="d${t.depth}"><a href="#${t.id}">${escape(t.text)}</a></li>`).join('')}</ul>`;
 }
 
+/** Keep the source's commands and tables, with the same sections and heading levels as the page. */
+function pageMarkdown(root, base, title, tokens, url) {
+  const content = tokens.map((token) => {
+    if (token.type === 'heading') return `${'#'.repeat(token.depth)} ${token.text}\n\n`;
+    if (token.type === 'code' || token.type === 'html') return token.raw;
+    return token.raw.replace(/(!?\[[^\]\n]*\]\()([^\s)]+)([^)]*\))/g, (_match, open, href, close) => {
+      const target = linkFor(root, base, token.from, href);
+      return `${open}${new URL(target, `https://dolly.nischal.fyi${url}`).href}${close}`;
+    });
+  }).join('');
+  return `# ${title}\n\n${content.trim()}\n`;
+}
+
 /** Every page, rendered: [{page, url, title, description, html (the main column), toc, sidebar, search}]. */
 export async function buildDocs(root, base) {
   const out = [];
@@ -258,11 +271,12 @@ export async function buildDocs(root, base) {
     } else {
       ({ title, tokens } = pageTokens(root, page));
     }
+    const markdown = pageMarkdown(root, base, title, tokens, urlOf(base, page));
     tokens = placeVisuals(tokens, page.visuals);
     const { html, toc } = render(root, base, tokens);
     const lead = plain((/<p>([\s\S]*?)<\/p>/.exec(html) ?? [])[1] ?? '');
     const description = page.description ?? (lead.length > 180 ? `${lead.slice(0, lead.lastIndexOf(' ', 170))}…` : lead);
-    out.push({ page, url: urlOf(base, page), title, description, html, toc });
+    out.push({ page, url: urlOf(base, page), title, description, html, toc, markdown });
   }
   return out.map((d, i) => {
     const prev = out[i - 1];
@@ -274,7 +288,8 @@ export async function buildDocs(root, base) {
       isDir ? '' : `<a href="${GITHUB}/blob/${BRANCH}/${file}?plain=1">View the markdown</a>`,
     ].filter(Boolean).join('');
     const pager = `<nav class="pager" aria-label="Pages">${prev ? `<a class="prev" href="${prev.url}"><span>${ICON_BACK} Previous</span><b>${escape(prev.page.nav)}</b></a>` : '<span></span>'}${next ? `<a class="next" href="${next.url}"><span>Next ${ICON_ARROW}</span><b>${escape(next.page.nav)}</b></a>` : '<span></span>'}</nav>`;
-    const main = `<p class="kicker">${escape(d.page.group)}</p><h1>${escape(d.title)}</h1><div class="doc-links">${links}</div><article class="prose">${d.html}</article>${pager}`;
+    const copyAI = `<button type="button" class="copy-ai" data-copy-ai="${d.url}index.md" title="Copy this page as Markdown">${ICON_COPY}${ICON_OK}<span data-copy-ai-label aria-live="polite">Copy for AI</span></button>`;
+    const main = `<p class="kicker">${escape(d.page.group)}</p><h1>${escape(d.title)}</h1><div class="doc-links">${links}${copyAI}</div><article class="prose">${d.html}</article>${pager}`;
     return { ...d, main, toc: tocHtml(d.toc), headings: d.toc, sidebar: sidebar(base, d.page) };
   });
 }
@@ -331,6 +346,11 @@ export function docsPlugin(root) {
             res.setHeader('content-type', 'application/json');
             return res.end(JSON.stringify(searchIndex(docs)));
           }
+          const markdown = docs.find((x) => url === `${x.url}index.md`);
+          if (markdown) {
+            res.setHeader('content-type', 'text/markdown; charset=utf-8');
+            return res.end(markdown.markdown);
+          }
           const want = url.endsWith('/') ? url : `${url}/`;
           const d = docs.find((x) => x.url === want);
           if (!d) return next();
@@ -350,6 +370,7 @@ export function docsPlugin(root) {
       const docs = await buildDocs(root, base);
       for (const d of docs) {
         this.emitFile({ type: 'asset', fileName: `${d.url.slice(base.length)}index.html`, source: fill(built, d, base) });
+        this.emitFile({ type: 'asset', fileName: `${d.url.slice(base.length)}index.md`, source: d.markdown });
       }
       this.emitFile({ type: 'asset', fileName: 'docs/search.json', source: JSON.stringify(searchIndex(docs)) });
     },
